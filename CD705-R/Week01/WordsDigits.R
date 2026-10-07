@@ -6,3 +6,5 @@ words.2.digits <- function(word){
 digits.2.words <- function(digit){
   return(names(digits[digits == digit]))
 }
+
+ggplot()

@@ -2,7 +2,7 @@
     "name": "R-Dev-Env",
     "image": "ghcr.io/r-devel/r-dev-env:main",
     "hostRequirements": {
-        "cpus": 4
+        "cpus": 2
     },
     "customizations": {
         "vscode": {

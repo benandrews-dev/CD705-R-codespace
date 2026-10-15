@@ -1,0 +1,122 @@
+---
+title: "CD705-R Week 02 Exercises"
+---
+
+# Exercise 1
+
+Similarly to the lecture, check that the numbers of Heads when a fair coin
+is tossed three times have the following probabilities:
+
+$p(0) = 0.125$, 
+$p(1) = 0.375$, 
+$p(2) = 0.375$, 
+$p(3) = 0.125$
+
+Check these values using appropriate simulations.
+
+## Solution
+
+```{r}
+get_num_heads_probability_array <- function(num_samples, num_tosses, toss_prob=0.5){
+    output <- c()
+
+    # The number of heads in num_samples samples of num_tosses coin tosses.
+    heads_per_sample <- rbinom(num_samples, num_tosses, toss_prob)
+    for (i in 0:num_tosses){
+        # How many samples have i heads?
+        count_i <- sum(heads_per_sample==i) 
+
+        # What is the probability of getting i heads?
+        p_i <- count_i/num_samples
+        output <- c(output, p_i)
+    }
+    output
+}
+num_samples <- 1e5
+num_tosses <- 3
+probability_array <- get_num_heads_probability_array(1e5, 3)
+for (i in 0:num_tosses){
+    cat("p(", i, ") = ", probability_array[i+1], "\n", sep="")
+}
+```
+
+# Exercise 2
+
+Let $X ∼ B(10, 0.1)$, that is, X is a binomial random variable with sample
+size n = 10 and probability of success p = 0.1.
+Calculate the following probabilities and check your calculations using appropriate
+simulations.
+
+1. $Pr[X=2]$
+2. $Pr[X \le 2]$
+3. $Pr[X \gt 2]$
+4. $Pr[2 \le X \lt 5]$
+
+## Solution
+
+We will calculate the probabilities using the `dbinom` and `pbinom` functions 
+in R, and then verify them with simulations.
+
+Let's start by running our simulations and getting a probability array for the 
+number of successes in 10 trials with a success probability of 0.1 per trial.
+
+```{r}
+probability_array <- get_num_heads_probability_array(1e6, 10, 0.1)
+
+# Graph of probability_array
+plot(0:10, probability_array, type="h", xlab="Number of Successes", ylab="Probability", main="Probability of Number of Successes in 10 Trials (p=0.1)")
+```
+
+### 1. $Pr[X=2]$
+```{r}
+dbinom(2, 10, 0.1)
+probability_array[3]
+# 3 because we want the probability of 2 successes
+```
+
+### 2. $Pr[X \le 2]$
+```{r}
+pbinom(2, 10, 0.1)
+probability_array[1] + probability_array[2] + probability_array[3]
+```
+
+### 3. $Pr[X \gt 2]$
+```{r}
+1 - pbinom(2, 10, 0.1)
+1 - (probability_array[1] + probability_array[2] + probability_array[3])
+```
+
+### 4. $Pr[2 \le X \lt 5]$
+```{r}
+pbinom(4, 10, 0.1) - pbinom(1, 10, 0.1)
+probability_array[3] + probability_array[4] + probability_array[5]
+```
+
+# Exercise 3
+
+# Exercise 4
+
+# Exercise 5
+
+# Exercise 6
+
+# Exercise 7
+
+# Exercise 8
+
+# Exercise 9
+
+# Exercise 10
+
+# Exercise 11
+
+# Exercise 12
+
+# Exercise 13
+
+# Exercise 14
+
+# Exercise 15
+
+# Exercise 16
+

@@ -58,3 +58,8 @@ print(rbinom_p)
 
 # The variance of X is given by:
 # Var(X) = n * p * (1 - p)
+
+
+#dbinom(x, size, prob) — Probability Mass Function (PMF): 
+#Calculates the exact probability of getting x successes in a given number of 
+#trials (size) with a success probability (prob) per trial.

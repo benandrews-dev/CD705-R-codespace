@@ -1,0 +1,30 @@
+```{r}
+#getwd()
+#setwd("CD705-R/Research/Road_Safety")
+```
+
+```{r}
+collisions_file_path <- "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-collision-last-5-years.csv"
+casualties_file_path <- "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-casualty-last-5-years.csv"
+vehicles_file_path <- "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-vehicle-last-5-years.csv"
+
+# download the data files from the specified URLs
+if (0 == 1) {
+  download.file(collisions_file_path, "data/collisions.csv")
+  download.file(casualties_file_path, "data/casualties.csv")
+  download.file(vehicles_file_path, "data/vehicles.csv")
+}
+```
+
+```{r}
+setwd("CD705-R/Research/Road_Safety")
+collisions_df <- data.frame(read.csv("data/collisions.csv"))
+casualties_df <- data.frame(read.csv("data/casualties.csv"))
+vehicles_df <- data.frame(read.csv("data/vehicles.csv"))
+print(getwd())
+```
+```{r}
+speed_limits <- collisions_df$speed_limit
+speed_limits <- na.omit(speed_limits)
+plot(speed_limits, main="Speed Limits of Collisions", xlab="Speed Limit (mph)", ylab="Number of Collisions")
+```

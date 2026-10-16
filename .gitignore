@@ -5,3 +5,7 @@ R-devel.tar.gz
 /venv
 .cache/
 .Rproj.user
+casualties.csv
+collisions.csv
+vehicles.csv
+

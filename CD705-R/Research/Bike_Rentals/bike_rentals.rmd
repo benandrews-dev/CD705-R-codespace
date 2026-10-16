@@ -1,0 +1,48 @@
+
+# Bike rentals data info: https://divvybikes.com/system-data
+# URL for the bike rentals data: https://divvy-tripdata.s3.amazonaws.com/index.html
+
+```{r}
+setwd("/workspaces/CD705-R/CD705-R/Research/Bike_Rentals/")
+
+wd <- getwd()
+if(wd != "CD705-R/Research/Bike_Rentals") {
+  setwd("CD705-R/Research/Bike_Rentals")
+}
+
+wd <- getwd()
+# If the working directory is not set correctly, exit the script
+if(!grepl("CD705-R/Research/Bike_Rentals", wd)) {
+    print(paste("ERROR: Working directory is not set correctly. Current working directory is:", wd))
+    stop("Exiting script due to incorrect working directory.")
+} else {
+    print(paste("Good path: Working directory is set to:", wd))
+}
+```
+
+```{r}
+prepare_data_files <- function() {
+  setwd("data")  # Change to the data directory
+  # Check if the required data files are present
+  required_files <- c("202507-divvy-tripdata.csv")
+
+  download_urls <- c("https://divvy-tripdata.s3.amazonaws.com/202507-divvy-tripdata.zip")
+  for (i in required_files) {
+    if (!file.exists(i)) {
+      print(paste("Missing file:", i))
+      print(paste("Downloading from:", download_urls[i]))
+      target_file_name <- paste0("data_", i, ".zip")
+      download.file(download_urls[i], destfile = target_file_name, mode = "wb")
+      print(paste("Extracting:", target_file_name))
+      unzip(target_file_name, exdir = ".")
+      print(paste("Extracted:", target_file_name))
+      file.remove(target_file_name)  # Clean up the zip file after extraction
+    } else {
+      print("All required data files are present.")
+    }
+  }
+}
+
+prepare_data_files()
+
+```

@@ -8,4 +8,5 @@ R-devel.tar.gz
 casualties.csv
 collisions.csv
 vehicles.csv
-
+data/*csv
+data/*zip

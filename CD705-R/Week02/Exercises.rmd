@@ -331,9 +331,111 @@ $$E[\text{Profit}] = (0.8 \cdot 100,000) + (0.1 \cdot 92,000) + (0.1 \cdot 84,00
 
 # Exercise 9
 
+A small market orders copies of a magazine each week. The owner pays £1
+for each copy of the magazine and charges customers £2; the magazines left at the end
+of the week have no salvage value. Find the optimal number of copies to order if the
+demand for the magazine has the following probability distribution:
+
+$$\begin{equation}
+p(1) = 1/15 \\
+p(2) = 2/15 \\
+p(3) = 3/15 \\
+p(4) = 4/15 \\
+p(5) = 3/15 \\
+p(6) = 2/15 \\
+\end{equation}$$
+
+### Solution
+
+We would like to know the expectation for the demand...
+
+$$\begin{align}
+E[\text{Demand}] &= \sum_{i=1}^{6} p(i) \cdot i \\
+&= (1/15 \cdot 1) + (2/15 \cdot 2) + (3/15 \cdot 3) + (4/15 \cdot 4) + (3/15 \cdot 5) + (2/15 \cdot 6) \\
+&= 1/15 + 4/15 + 9/15 + 16/15 + 15/15 + 12/15 \\
+&= 57/15 \\
+&= 3.8
+\end{align}$$
+
+He should order 4 copies of the magazine to maximize his expected profit.
+
 # Exercise 10
 
+A firm offers a 1% early-payment discount if an invoice is paid within 10
+days and the full amount is due after 10 days. In the past, 30% of all invoices have been
+paid within 10 days. If the firm sends out 8 invoices during the first week of January,
+what is the probability that:
+
+1. no one will receive the discount? 
+2. everyone will receive the discount?
+3. less than 3 will receive the discount? 
+4. at least 2 will receive the discount?
+
+## Solution
+
+This is a binomial distribution problem with $n = 8$ and $p = 0.3$.
+
+1. The probability that no one will receive the discount is:
+   $$P(X = 0) = \binom{8}{0} (0.3)^0 (0.7)^8 = 1 \cdot 1 \cdot (0.7)^8 = (0.7)^8 \approx 0.0576$$
+
+2. The probability that everyone will receive the discount is:
+   $$P(X = 8) = \binom{8}{8} (0.3)^8 (0.7)^0 = 1 \cdot (0.3)^8 \cdot 1 = (0.3)^8 \approx 0.0000656$$
+
+3. The probability that less than 3 will receive the discount is:
+   $$P(X < 3) = P(X = 0) + P(X = 1) + P(X = 2)$$
+   $$P(X < 3) = \binom{8}{0} (0.3)^0 (0.7)^8 + \binom{8}{1} (0.3)^1 (0.7)^7 + \binom{8}{2} (0.3)^2 (0.7)^6$$
+   $$P(X < 3) = (0.7)^8 + 8(0.3)(0.7)^7 + 28(0.3)^2(0.7)^6$$
+   $$P(X < 3) \approx 0.55177$$
+
+4. The probability that at least 2 will receive the discount is:
+   $$P(X \geq 2) = 1 - P(X < 2) = 1 - [P(X = 0) + P(X = 1)]$$
+   $$P(X \geq 2) = 1 - [(0.7)^8 + 8(0.3)(0.7)^7]$$
+   $$P(X \geq 2) \approx 1 - [0.2553] = 0.7447$$
+
+We can also check these probabilities using simulations in R.
+
+```{r}
+set.seed(123)
+num_trials <- 1e6
+discounts <- rbinom(num_trials, 8, 0.3)
+prob_no_discount <- mean(discounts == 0)
+prob_all_discount <- mean(discounts == 8)
+prob_less_than_3_discount <- mean(discounts < 3)
+prob_at_least_2_discount <- mean(discounts >= 2)
+prob_no_discount
+prob_all_discount
+prob_less_than_3_discount
+prob_at_least_2_discount
+```
+
 # Exercise 11
+
+Each of 2208 people has a 5% chance to be selected, independently of each
+other. Find the probability that the number of selected people will be
+
+1. exactly 110; 
+2. greater than 120; 
+3. less than 100; 
+4. between 90 and 110.
+
+## Solution
+
+This is a binomial distribution problem with $n = 2208$ and $p = 0.05$.
+
+1. The probability that exactly 110 people will be selected is:
+   $$\begin{align}
+   P(X = 110) &= \binom{2208}{110} (0.05)^{110} (0.95)^{2208-110} \\
+   &= 0.0390
+   \end{align}$$
+
+2. The probability that greater than 120 people will be selected is:
+   $$P(X > 120) = 1 - P(X \leq 120)$$
+
+3. The probability that less than 100 people will be selected is:
+   $$P(X < 100) = P(X \leq 99)$$
+
+4. The probability that between 90 and 110 people will be selected is:
+   $$P(90 \leq X \leq 110) = P(X \leq 110) - P(X < 90)$$
 
 # Exercise 12
 

@@ -1,0 +1,200 @@
+---
+title: "| CD705 Statistical Data Analysis with R \n|\n| 
+        Week 3.1: R Lecture Companion\n|\n|\n"
+author: "Alexey Chernov"
+date: "21 October 2026"
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+#options(width = 120)
+knitr::opts_chunk$set(fig.width=8,fig.align='center')
+```
+
+```{r}
+set.seed(17102022)
+```  
+
+
+## 1. Large deviations
+
+### A fair coin tossed 10 times
+```{r fair-coin}
+p <- 0.5
+n <- 10
+x <- 0:n 
+expected <- n*p
+for(d in 0:max(expected,n-expected)){
+  deviated <- abs(x-expected)>=d
+  barplot(dbinom(x,n,p),col=c("blue","red")[deviated+1],border=NA,
+          main=paste("Probability of deviating by",d,"or more is",sum(dbinom(x[deviated],n,p))),
+          names.arg=0:n)
+}  
+```   
+
+
+### A biased coin with $p=0.2$ tossed 10 times, "symmetric" deviations
+
+```{r biased-coin-symm}
+p <- 0.2
+n <- 10
+x <- 0:n 
+expected <- n*p
+for(d in 0:max(expected,n-expected)){
+  deviated <- abs(x-expected)>=d
+  barplot(dbinom(x,n,p),col=c("blue","red")[deviated+1],border=NA,
+          main=paste("Probability of deviating by",d,"or more is",sum(dbinom(x[deviated],n,p))),
+          names.arg=0:n)
+}  
+```   
+
+
+### A biased coin with $p=0.2$ tossed 10 times, "equally spread" deviations 
+
+```{r biased-coin-equal}
+p <- 0.2
+n <- 10
+x <- 0:n 
+expected <- n*p
+for(lower.bound in 0:(expected-1)){
+  lower.deviated <- 0:lower.bound
+  lower.probability <- sum(dbinom(lower.deviated,n,p))
+  upper.bound <- qbinom(lower.probability,n,p,lower.tail=FALSE)
+  upper.deviated <- upper.bound:n
+  deviated <- rep.int(FALSE,n+1)
+  deviated[c(lower.deviated,upper.deviated)+1] <- TRUE
+  barplot(dbinom(x,n,p),col=c("blue","red")[deviated+1],border=NA,
+          main=paste("Probability of deviating up to",lower.bound,
+                    "and the other side is",sum(dbinom(x[deviated],n,p))),
+          names.arg=0:n)
+} 
+for(upper.bound in (expected+1):n){
+  upper.deviated <- upper.bound:n
+  upper.probability <- sum(dbinom(upper.deviated,n,p))
+  lower.bound <- qbinom(upper.probability,n,p)
+  lower.deviated <- 0:lower.bound
+  deviated <- rep.int(FALSE,n+1)
+  deviated[c(lower.deviated,upper.deviated)+1] <- TRUE
+  barplot(dbinom(x,n,p),col=c("blue","red")[deviated+1],border=NA,
+          main=paste("Probability of deviating from",upper.bound,
+                    "and the other side is",sum(dbinom(x[deviated],n,p))),
+          names.arg=0:n)
+}
+```   
+
+
+## 2. Hypothesis testing
+
+We will be testing the hypothesis $p=0.5$.
+```{r}
+p.hypothesised <- 0.5
+```   
+
+### Analytic procedure
+
+Let's see what happens when the hypothesis is actually false.
+```{r}
+n <- 10
+p <- 0.2
+```   
+
+Let's generate a sample from the actual distribution $p=`r p`$:
+```{r}
+x <- rbinom(1,n,p)
+x
+```   
+
+Now calculate the probability of a deviation at least as large as in the sample
+for samples from the hypothesised distribution:
+```{r p-value-analytic}
+(expected <- n*p.hypothesised)
+(deviation <- abs(x-expected))
+lower.bound <- expected - deviation
+upper.bound <- expected + deviation
+upper.bound <- ifelse((upper.bound-floor(upper.bound)) < .Machine$double.eps,upper.bound-1,floor(upper.bound))
+pbinom(lower.bound,n,p.hypothesised) + 1 - pbinom(upper.bound,n,p.hypothesised)
+```   
+
+The probability ($p$-value) is not small, so we cannot reject the hypothesis.
+
+### Simulated procedure
+
+We will use the same sample from the actual distribution with $p=`r p`$ as above.
+```{r}
+x
+```   
+
+Now let's generate many samples from the hypothesised distribution
+```{r p-value-simulation}
+num.simulations <- 1e6
+simulated.X <- rbinom(num.simulations,n,p.hypothesised)
+```   
+and compare the deviations:
+```{r p-value-simulation-comparison}
+expected <- n*p.hypothesised
+mean(abs(simulated.X - expected)>=abs(x-expected))
+```   
+
+
+## 3. Confidence Sets
+
+The function below returns True if the hypothesis is rejected and False otherwise.
+```{r function-test-hyp}
+test.hypothesis <- function(significance.level,sample.size,x.sample,probability.hypothesised){
+  expected <- sample.size*probability.hypothesised;
+  deviation <- abs(x.sample-expected);
+  lower.bound <- expected - deviation;
+  upper.bound <- expected + deviation;
+  upper.bound <- ifelse( (upper.bound-floor(upper.bound)) < .Machine$double.eps, 
+                         upper.bound - 1,floor(upper.bound))
+  p.value <- 
+    pbinom(lower.bound,sample.size,probability.hypothesised) + 
+    1 - pbinom(upper.bound,sample.size,probability.hypothesised);
+  return(p.value < significance.level);
+}
+```  
+
+Let's fix some significance level:
+```{r}
+alpha <- 0.05
+```   
+
+Now let's test several hypotheses at once. We begin with values of $p=0,0.1,0.2,\ldots,1$ and print those
+that are not rejected:
+```{r conf-set-01}
+possible.hypotheses <- seq(from=0,to=1,by=0.1);
+rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis(alpha,n,x,p.h)})
+possible.hypotheses[!rejected.hypotheses]
+```    
+
+Let's print those values as an interval:
+```{r}
+interval <- function(vector){c(min(vector),max(vector))}
+interval(possible.hypotheses[!rejected.hypotheses])
+```   
+
+Now a finer set of hypotheses, every $0.01$, and the non-rejected are plotted in blue:
+```{r conf-set-001}
+possible.hypotheses <- seq(from=0,to=1,by=0.01);
+rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis(alpha,n,x,p.h)})
+plot(x=possible.hypotheses,y=rep_len(1,length(rejected.hypotheses)),col=c("blue","red")[rejected.hypotheses+1],
+     pch=19,ylab="")
+interval(possible.hypotheses[!rejected.hypotheses])
+```    
+
+And an even finer set, every $0.001$:
+```{r conf-set-0001,fig.width=12}
+possible.hypotheses <- seq(from=0,to=1,by=0.001);
+rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis(alpha,n,x,p.h)})
+plot(x=possible.hypotheses,y=rep_len(1,length(rejected.hypotheses)),col=c("blue","red")[rejected.hypotheses+1],
+     pch=".",ylab="")
+interval(possible.hypotheses[!rejected.hypotheses])
+```    
+
+And now every $0.0001$:
+```{r conf-set-00001,fig.width=12}
+possible.hypotheses <- seq(from=0,to=1,by=0.0001);
+rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis(alpha,n,x,p.h)})
+plot(x=possible.hypotheses,y=rep_len(1,length(rejected.hypotheses)),col=c("blue","red")[rejected.hypotheses+1],
+     pch=".",ylab="")
+interval(possible.hypotheses[!rejected.hypotheses])
+```    

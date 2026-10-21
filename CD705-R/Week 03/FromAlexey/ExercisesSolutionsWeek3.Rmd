@@ -1,0 +1,335 @@
+---
+title: 'CD705, Week 3: Solutions / Answers to Exercises'
+author: "Alexey Chernov"
+date: "21 October 2026"
+---
+
+
+```{r}
+set.seed(27102021)
+```  
+
+# Exercise 1
+
+Let's define a function with suitable default values for use in this exercise.
+The function returns True if the hypothesis is rejected and False otherwise.
+```{r}
+p.hyp <- 0.5
+s.size <- 10
+alpha <- 0.05
+test.my.hypothesis <- function(x.sample,sample.size=s.size,probability.hypothesised=p.hyp,significance.level=alpha){
+  expected <- sample.size*probability.hypothesised;
+  deviation <- abs(x.sample-expected);
+  lower.bound <- expected - deviation;
+  upper.bound <- expected + deviation;
+  upper.bound <- ifelse( (upper.bound-floor(upper.bound)) < .Machine$double.eps, upper.bound - 1,floor(upper.bound))
+  p.value <- 
+    pbinom(lower.bound,sample.size,probability.hypothesised) + 
+    1 - pbinom(upper.bound,sample.size,probability.hypothesised);
+  return(p.value < significance.level);
+}
+p <- 0.2
+num.simulations <- 1e4 # rather small, just for qualitative estimates of probabilities
+```   
+
+### (a)
+```{r}
+for(n in c(2,5,10,20,50,100)){
+  print(paste("Selecting samples of size ",n," from a binomial distribution with true p=",p,
+        ", the probability to (correctly) reject the hypothesis that p=",p.hyp," at significance level ",alpha,
+        " is ",
+        mean(sapply(rbinom(num.simulations,n,p),
+                    function(x){test.my.hypothesis(x.sample=x,sample.size=n)})
+             )
+        ,sep="")
+        )
+}   
+```   
+We see that the test power (the probability to reject the incorrect hypothesis) 
+increases as the sample size increases.
+
+### (b)
+```{r}  
+cat(paste("Select samples of size",s.size,"\n"))
+for(p in c(0.1,0.2,0.3,0.4,0.5,0.6)){
+  print(paste("For true p=",p,
+        ", the probability to reject the hypothesis that p=",p.hyp," at significance level ",alpha,
+        " is ",
+        mean(sapply(rbinom(num.simulations,s.size,p),
+                    test.my.hypothesis)
+             )
+        ,sep="")
+        )
+}   
+```   
+We see that the hypothesis is more likely to be rejected when it is further from the true probability. 
+
+Note that these seemingly similar calculations above have very different interpretations:
+
+* for `p==p.hyp`, the hypothesis is correct and rejecting it is Type I error, so the printed value is the probability of Type I error;
+* for `p!=p.hyp`, the hypothesis is not correct and **not** rejecting it is Type II error, so the printed value is the test power.
+
+Let's repeat it for several values of the sample size:
+```{r}
+for(n in c(5,10,100,1000)){
+  cat(paste("Select samples of size",n,"\n"))
+  for(p in c(0.1,0.2,0.3,0.4,0.5,0.6)){
+    print(paste("For true p=",p,
+          ", the probability to reject the hypothesis that p=",p.hyp," at significance level ",alpha,
+          " is ",
+          mean(sapply(rbinom(num.simulations,n,p),
+                      function(x){test.my.hypothesis(x.sample=x,sample.size=n)})
+               )
+          ,sep="")
+          )
+  }
+  cat("\n")
+}
+```   
+Note that the probability of Type I error is always less than the significance level, but it is close for large samples only.
+
+You are advised to check more values of `p` for `n=1000`.
+
+### (c) to (f)
+These items are very similar to the above, but your questions are welcome if any.
+
+# Exercise 2
+
+If the median is indeed $25$, then the lifetime of a component will be equiprobably below and above $25$, hence the number of observations exceeding $25$ has a binomial distribution with probability of success $0.5$. A suitable null hypothesis is $X\sim B(20,0.5)$.
+
+We have observed $8$ successes (values above $25$), so the $p$-value, the probability to observe something as extreme or more extreme as these, is 
+$\Pr[X\le 8\text{ or }X\ge 12]$:
+```{r}
+2*pbinom(8,20,0.5)
+```
+So, this observation is quite possible and there are no reasons to reject the null hypothesis.
+
+# Exercise 3
+
+Let $p$ be the proportion of adults resident in the UK area
+who have premium bond holdings. Then the number of such holders in the sample $Y$ has a binomial distribtion,
+$Y\sim B(110,p)$ ($n=110$ is the sample size).
+
+We can use the code from the lecture R companion and the above function.
+```{r}
+interval <- function(vector){c(min(vector),max(vector))}
+alpha <- 1 - 0.95 # the significance level required for a 95% confidence interval
+possible.hypotheses <- seq(from=0,to=1,by=0.001);
+rejected.hypotheses <- sapply(possible.hypotheses,
+                              function(p.h){test.my.hypothesis(x.sample=42,sample.size=110,
+                                                               probability.hypothesised=p.h,
+                                                               significance.level=alpha)})
+interval(possible.hypotheses[!rejected.hypotheses])
+```  
+So, the 95% confidence interval for the proportion of people in the area who have premium bond holdings is [29.6%,47.7%].
+
+
+### Normal Approximation (will be discussed much later in the module!)
+
+**This material is advanced! Return to it when we have covered the normal distribution**
+
+Let's consider an alternative way to answer the same question.
+
+We can approximate the binomial distribution by a normal distribution $\mathcal{N}(np,np(1-p))$ and 
+$\frac{|Y-np|}{\sqrt{np(1-p)}}$ has the standard normal distribution.
+Hence, $\Pr\left[\frac{|Y-np|}{\sqrt{np(1-p)}}\le d\right] = 0.95$ if $d$ is the $0.975$-quantile of the normal distribution,
+$d=$
+```{r}
+qnorm(0.975)
+```  
+
+So, we know that $\frac{|Y-np|}{\sqrt{np(1-p)}}\le d$ holds with probability $95$\%, 
+we know the observed value of $y=42$, we know $n=110$ and $d=`r qnorm(0.975)`$. Solving the inequality for $p$, we get the required confidence interval. This requires solving a quadratic equation (which is done below), 
+but we can avoid it using the fact that $p(1-p)\le 0.25$ for any $p$.
+Thus, $\frac{|y-np|}{\sqrt{np(1-p)}}\le d$ implies $\frac{|y-np|}{\sqrt{n/2}}\le d$,
+which is equivalent to 
+$\frac{y}{n} - \frac{d}{2\sqrt{n}} \le p \le \frac{y}{n} + \frac{d}{2\sqrt{n}}$,
+that is, a suitable confidence interval is 
+```{r}
+y <- 42
+n <- 100
+d <- qnorm(0.975)
+c(y/n - d/(2*sqrt(n)),y/n + d/(2*sqrt(n)))
+```  
+or [32.2%,51.8%]. The width of this interval is
+```{r}
+c(c(y/n - d/(2*sqrt(n)),y/n + d/(2*sqrt(n)))%*%c(-1,1))
+```  
+
+The width of the exact interval is
+```{r}
+c(interval(possible.hypotheses[!rejected.hypotheses])%*%c(-1,1))
+```  
+
+We see that this approximate interval is wider than the exact interval, but also it is shifted up. The main reason 
+is that the quality of approximation deteriorates when the probability of success $p$ deviates from $0.5$. 
+However, the difference between the intervals is quite small compared to their length, 
+so using the normal approximation is a valid method for this question.
+
+  
+Let's make another improvement to the approximate method and solve exactly and in the general form the quadratic equation:
+$\frac{|y-np|}{\sqrt{np(1-p)}}\le d$ is equivalent to 
+$(y-np)^2\le d^2 np(1-p)$, which is equivalent to
+$y^2 - 2ny p + n^2p^2 \le d^2 np - d^2 np^2$, or $(n^2+nd^2)p^2 - (2ny + nd^2)p + y^2\le 0$.
+From this, we get a slightly narrower approximate interval:
+```{r}
+quadratic.equation.roots <- function(a,b,c){
+  discr <- sqrt(b^2 - 4*a*c)
+  x1 <- (-b - discr)/(2*a)
+  x2 <- (-b + discr)/(2*a)
+  c(x1,x2)
+}
+quadratic.equation.roots(n^2+n*d^2,-(2*n*y+n*d^2),y^2)
+```   
+
+The general formula for the approximate confidence interval with exact solution of the quadratic equation is 
+$\frac{y}{n}\cdot\frac{1+d^2/2y}{1+d^2/n} \pm \frac{d}{2\sqrt{n}}\frac{\sqrt{4y/n-4y^2/n^2+d^2/n}}{(1+d^2/n)}$:
+```{r}
+c((y/n)*(1+d^2/(2*y))/(1+d^2/n) - (d/(2*sqrt(n)))*sqrt(4*y/n-4*y^2/n^2+d^2/n)/(1+d^2/n),
+  (y/n)*(1+d^2/(2*y))/(1+d^2/n) + (d/(2*sqrt(n)))*sqrt(4*y/n-4*y^2/n^2+d^2/n)/(1+d^2/n))
+```   
+
+# Exercise 4
+
+## (a)
+The null hypothesis is that $X$ has the hypergeometric distribution with a sample of size 10 from a population of size 100 with 20 successes.
+The expected number of successes in the sample is 2, hence we will consider two tails symmetric about 2;
+as the distribution is not symmetric, we will calculate both tail probabilities separately.
+
+`(i)` $\Pr[X\le0\text{ or }X\ge 4]$
+```{r}
+phyper(0,20,100-20,10) + phyper(3,20,100-20,10,FALSE)
+```
+There are no reasons to reject the null hypothesis.  
+
+`(ii)` The same as the previous item as 4 is symmetric to 0.
+
+`(iii)` $\Pr[X \ge 5] = \Pr[X>4]$ (the symmetric value $-1$ does not make sense):
+```{r}
+phyper(4,20,100-20,10,FALSE)
+```
+The probability is less than $5$%, so we reject the null hypothesis and the claim.
+
+## (b)
+The null hypothesis is that $X$ has the binomial distribution with a sample of size 10 and the probability of success 0.2.  
+As before, we consider symmetry about 2 and calculate the two tails separately.
+
+`(i)` and `(ii)` $\Pr[X\le0\text{ or }X\ge 4]$
+```{r}
+pbinom(0,10,0.2) + pbinom(3,10,0.2,FALSE)
+```
+There are no reasons to reject the null hypothesis.  
+
+`(iii)` $\Pr[X \ge 5]$:
+```{r}
+pbinom(4,10,0.2,FALSE)
+```
+The probability is less than $5$%, so we reject the null hypothesis and the claim.
+
+# Exercise 5
+
+The null hypothesis is that $X$, the number of students who liked the lecture, has the hypergeometric distribution with a sample of size 5 from a population of size 50 with $M$ successes, for different values of $M$.
+We know that $X$ realised as $x=4$ in the selected sample.
+
+### (i)
+$M=4$, so the expected value of the number of successes in the sample is $0.4$.
+The observed number $x=4$ is larger than the expected one, hence we consider $X\ge 4$ as (large) deviations.
+$[X\ge 4]$ is the same as $[X-0.4\ge 3.6]$, so a symmetric event will be 
+$[|X-0.4|\ge 3.6]$, which is $[X-0.4\ge 3.6 \text{ or }X-0.4 \le -3.6]$ or 
+$[X\ge 4 \text{ or }X \le -3.2]$. As $X\ge 0$ (it is a number of students!), we don't need to consider the other tail.
+
+$\Pr[X \ge 4]$ is
+```{r}
+phyper(3,4,50-4,5,FALSE)
+```    
+This probability is very small, hence we confidently reject the hypothesis.
+
+A common sense interpretation: the hypothesis is that only 4 students out of 50 liked the lecture,
+and all of them happened to be in a random sample of size 5; unbelievable! Unbelievable = reject the hypothesis.
+
+### (ii)
+$M=40$, the expected number is $4$, and we must treat $X=4$ as a deviation! Hence
+the deviation event is $[X\le 4 \text{ or }X \ge 4]$, which is everything, and it's probability is $1$.
+We fail to reject the hypothesis.
+
+### (iii)
+$M=49$, the expected value is $4.9$, so $[X\le 4]$ is a deviation. The symmetric deviation $X\ge 5.8$ doesn't make sense as $X\le 5$ (the sample size).
+
+$\Pr[X \le 4]$ is
+```{r}
+phyper(4,49,50-49,5)
+```    
+This probability is not too small, hence we don't have grounds to reject the hypothesis. 
+Actually, our sample is typically too small to reject such hypotheses! 
+
+# Exercise 6
+## (a)
+This is selection without replacement from a finite population of size $48+41=89$ with $41$ females, 
+so the number $X$ of females in a sample of size $5$ has a hypergeometric distribution. 
+The probability that females have a majority is $\Pr[X\ge 2.5] = \Pr[X>2] = 1-\Pr[X\le2] =$
+```{r}
+1 - phyper(2,41,48,5)
+```   
+
+## (b)
+If the selection is according to the policy, then each year is independent and 
+the number of years $Y$ when females have a majority has a binomial distribution with probability of success 
+$\Pr[X\ge 2.5]$ as above. 
+The probability to observe $Y=1$ or more extreme (the p-value) is $\Pr[Y\le1] =$
+```{r}
+pbinom(1,6,1 - phyper(2,41,48,5))
+```    
+This is quite large to accept that such an event may have happened for random reasons, 
+so there are no grounds for concern yet.
+
+Remark: one could consider the probability of a double-sided deviation, where females have a majority either too seldom or too often, but that would only increased the p-value.
+
+# Exercise 7
+
+## (a) 
+The number of correctly transmitted bits can be described by the binomial distribution 
+with $2N + 1$ trials and the probability of success $0.7$
+as each bit can be either correctly transmitted or not independently of each
+other and with the same probability.
+
+## (b) 
+A transmission error occurs if $2$ or fewer bits in the block of $5$ are transmitted correctly, 
+hence the probability of a transmission error is $\Pr[X \le 2]$ for $X\sim B(5, 0.75)$,
+that is,
+```{r}
+(p <- pbinom(2,5,0.75))
+```  
+
+## (c)
+For blocks of length $5$, each transmission error occurs with the probability $p$ calculated in (b) above. 
+The errors occur independently of each other, so the number of errors in a message of length $512$ follows 
+the binomial distribution $B(512, p)$. The expected number of errors is 
+```{r}
+512*p
+```  
+hence the observed number of errors has deviated from the mean by at least 
+```{r}
+73 - 512*p
+```   
+If we consider equal deviation in the either direction, the $p$-value will be the probability of either up to $33$ errors or at least $73$ errors,
+which is 
+```{r}
+pbinom(33,512,p) + 1 - pbinom(72,512,p)
+```  
+Alternatively, we can consider the larger of the two probabilities doubled for the $p$-value,
+which is
+```{r}
+2*max(pbinom(33,512,p), 1 - pbinom(72,512,p))
+```  
+The $p$-value is small in either case, so it is unlikely that blocks of length $5$ were used for
+error correction.
+
+## (d) 
+We need to find the minimal $N$ such that $\Pr [X \le N] < 0.01$, where $X \sim B(2N+1,0.75)$.
+We can try different values of $N$ in a reasonable interval and check whether the probability is small enough.
+As we checked $N=2$ above, let's start with $3$:
+```{r}
+N <- 3:20
+(Nmin <- N[min(which(pbinom(N,2*N+1,0.75)<0.01))])
+```   
+Hence, the minimal $N$ is `r Nmin` and the block length is `r 2*Nmin+1`.

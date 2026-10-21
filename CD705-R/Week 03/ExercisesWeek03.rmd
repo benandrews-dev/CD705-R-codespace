@@ -1,0 +1,114 @@
+---
+title: "CD705: Exercises, Week 3"
+date: "21 October 2026"
+---
+
+# Exercise 1
+
+The Week 3.1 R lecture companion shows examples how to test the hypothesis 
+phyp = 0.5 and how to find approximately a 95% confidence interval, using the
+number of successes in a sample of size n = 10 selected from a binomial 
+distribution with probability of success p = 0.2.
+
+Modify the code to investigate the following questions and write down your 
+conclusions. You should make several runs with independently selected samples 
+to ensure that your conclusions are reliable.
+
+1. For hypothesis testing with fixed phyp = 0.5 and p = 0.2, how do the changes of n
+affect the results?
+2. For hypothesis testing with fixed phyp = 0.5 and n = 10, how do the changes of p
+affect the results? Answer this question also for n = 5, n = 100 and n = 1000.
+3. For hypothesis testing with fixed p = 0.2 and n = 10, how do the changes of phyp
+affect the results? Answer this question also for n = 5, n = 100 and n = 1000.
+4. (optional) Answer the first two questions for a one-tailed hypothesis. Answer the
+third question for “equally spread” deviations.
+5. For confidence intervals with fixed confidence level 1 − α = 95% and p = 0.2, how
+do the changes of n affect the results? Use any form of a confidence interval you
+find convenient.
+6. For confidence intervals with fixed n = 10 and p = 0.2, how do the changes of
+the confidence level 1 − α affect the results? Answer this question also for n = 5,
+n = 100 and n = 1000.
+
+## Solution
+
+# Exercise 2
+
+The manufacturer claims that the median lifetime of a component is 25
+hours (that means that the lifetime of such a component is equally likely to be below
+and above 25 hours). To verify this claim, an analyst decided to select a random sample
+of 20 such components, observe their lifetime and count X, the number of observations
+exceeding 25 hours.
+
+The sample turned out to contain 8 components with lifetime exceeding 25 hours.
+Test a suitable hypothesis and state your conclusion.
+
+## Solution
+
+# Exercise 3
+
+One hundred and ten adults resident in a UK area are chosen at random
+to take part in a survey about personal savings. Forty two of them are found to hold
+premium bonds. Find a 95% confidence interval for the proportion of adults resident in
+the UK area who have premium bond holdings.
+
+
+## Solution
+
+# Exercise 4. (cf. Exercise 14 in Week 2.)
+
+Childhood lead poisoning due to atmospheric pollution is a major public health 
+concern in some areas. A simple random sample of size 10 has been selected and 
+this sample contains: (i) no; (ii) four ; (iii) five children with a high blood
+lead level.
+
+If you are told that the sample is from
+
++ a group of 100 children, where 20 have a high blood lead level,
++ a large population, where 1 child in 5 has a high blood lead level,
+
+would you find this claim plausible? Justify your conclusion.
+
+## Solution
+
+# Exercise 5. (cf. Exercise 16 in Week 2.)
+A lecturer selected randomly five students out of 50 and asked whether they liked the
+last lecture. Four of the selected students liked the lecture and one did not.
+Test the hypothesis that among all 50 students the number of those who liked the
+lecture is equal to (i) 4; (ii) 40; (iii) 49.
+
+## Solution
+
+# Exercise 6
+
+In a company with 48 male and 41 female employees, the HR department
+annually conducts a focus group to discuss the workplace culture. The policy says that
+5 employees should be selected fairly and randomly for the focus group.
+(a) What probability distribution is appropriate for modelling the number of female
+members in the focus group? Calculate the probability that female members are a
+majority in the focus group.
+(b) A whistleblower reports that female employees were a majority in the focus group
+only once in the last 6 years and hence the policy is clearly violated. Conduct an
+appropriate statistical analysis and conclude whether the whistleblower's concerns
+are valid.
+
+## Solution
+
+# Exercise 7
+
+Messages consisting of 0s and 1s are transmitted through a noisy channel,
+where each bit (binary digit) is either transmitted correctly or flipped (that is, 0 is replaced
+by 1 or vice versa). The probability of correct transmission is 0.75 for each transmitted
+bit, independently of any other transmitted bits.
+For error correction, each bit of the original message is transmitted as a block where
+the original bit is repeated 2N + 1 times. The most common bit (occurring at least N + 1
+times) in the received block is taken as the received bit. If the received bit is different
+from the original bit, this is called a transmission error.
+(a) What probability distribution is appropriate for modelling the number of correctly
+transmitted bits in a block of size 2N + 1?
+(b) Calculate the probability of a transmission error for a block of length 5 (that is,
+when N = 2).
+(c) It is known that 73 transmission errors occurred in a message having the original
+length of 512. Using an appropriate statistical procedure, decide whether blocks of
+length 5 were used for error correction in that case.
+(d) Find the minimal block length 2N + 1 such that the probability of a transmission
+error is less than 1%.

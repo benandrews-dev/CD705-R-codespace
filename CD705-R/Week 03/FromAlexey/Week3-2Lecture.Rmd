@@ -1,0 +1,239 @@
+---
+title: "| CD705 Statistical Data Analysis with R \n|\n| Week 3.2: Efficient R Programming\n|\n|\n"
+author: "Alexey Chernov"
+date: "21 October 2026"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 130)
+knitr::opts_chunk$set(fig.width=12,fig.height=8,fig.align='center')
+```
+
+# R data types and objects
+
+```{r type-examples}
+my.number <- 3L
+my.quantity <- 3.14
+my.vector <- c(1,2,3)
+my.string <- "Hi!"
+my.factor <- factor(c("T","F"))
+my.date <- Sys.Date()
+my.function <- function(x){
+  cat(paste("Mode of ",deparse(substitute(x))," is ",mode(x),
+            "\nType of ",deparse(substitute(x))," is ",typeof(x),
+            "\nClass of ",deparse(substitute(x))," is ",class(x),
+            "\n",
+            sep=""))
+}
+
+my.function(my.number)
+my.function(my.quantity)
+my.function(my.vector)
+my.function(my.string)
+my.function(my.factor)
+my.function(my.date)
+my.function(my.function)
+```   
+The mode and type describe what kind of information is stored in the object, while class defines methods available for the object. 
+
+### Classes and methods
+
+```{r class-date-difference}
+class(Sys.Date() - Sys.Date())
+```  
+
+The class defines which method will be called for a function
+```{r print-examples}
+print(Sys.Date())
+print(Sys.Date() - Sys.Date())
+print(Sys.Date)
+print(my.function)
+print(mean)
+```   
+
+### Names and visibility
+
+```{r namespace,error=TRUE}
+mean <- c(1,2,3)
+print(mean)
+mean(mean)
+mean <- function(){}
+print(mean)
+mean(mean)
+mean(c(1,2,3))
+base::mean(c(1,2,3))
+base::mean(mean)
+```   
+
+
+# Amount of memory (storage)
+
+```{r object-sizes1}
+object.size(my.number)
+object.size(my.quantity)
+```   
+```{r object-sizes2}
+sapply(ls(),function(x){object.size(get(x))})
+```   
+
+```{r object-sizes3}
+for(i in 1:20){
+  cat(paste("The size of 1:",i," is ",object.size(1:i),"\n",sep=""))
+}
+```   
+
+```{r object-sizes3.5}
+object.size(1:100)
+object.size(1:1000)
+object.size(1:10000)
+object.size(1:10000 + 1)
+object.size(1:10000 + 1L)
+typeof(1:10000)
+typeof(1:10000 + 1)
+typeof(1:10000 + 1L)
+```   
+
+# Running time
+
+R is a very convenient programming language, but it will have performance issues unless
+you use R-appropriate programming style.
+
+### Built-in functions
+
+```{r sum-memory-setup}
+rm(list=ls())
+test.length <- 1e8
+data.vector <- 1:test.length
+```   
+
+A for loop for finding a sum:
+```{r sum-for-loop} 
+start.time <- Sys.time()
+my.sum <- 0
+for(i in 1:test.length){
+  my.sum <- my.sum + data.vector[i]
+}
+my.sum
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+The built-in function for finding a sum:
+```{r sum-built-in} 
+start.time <- Sys.time()
+sum(data.vector)
+end.time <- Sys.time()
+print(end.time - start.time)
+``` 
+
+### Vector operations 1
+
+```{r v1-memory-setup}
+rm(list=ls())
+test.length <- 1e8
+pre.data.vector <- 1:test.length
+``` 
+
+A for loop for a simple operation:
+```{r v1-for-loop} 
+start.time <- Sys.time()
+post.data.vector <- pre.data.vector
+for(i in 1:test.length){
+  post.data.vector[i] <- pre.data.vector[i] + 1L
+}
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+A vectorised operation:
+```{r v1-vector-op} 
+rm(post.data.vector)
+start.time <- Sys.time()
+post.data.vector <- pre.data.vector + 1L
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+### Vector operations 2
+
+A for loop for another simple operation:
+```{r v2-for-loop} 
+rm(post.data.vector)
+start.time <- Sys.time()
+post.data.vector <- pre.data.vector
+for(i in 1:test.length){
+  post.data.vector[i] <- pre.data.vector[i] + 1
+}
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+A vectorised operation:
+```{r v2-vector-op} 
+rm(post.data.vector)
+start.time <- Sys.time()
+post.data.vector <- pre.data.vector + 1
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+### Apply() family
+
+```{r apply-memory-setup}
+rm(list=ls())
+test.length <- 1e7
+pre.data.vector <- as.double(1:test.length)
+``` 
+
+Let's define some "complicated" processing:
+```{r apply-def-function}
+processing <- function(x){
+  return((x^2 - 1) %% 7)
+}
+```   
+
+A for loop for the complicated processing:
+```{r apply-for-loop} 
+start.time <- Sys.time()
+post.data.vector <- pre.data.vector
+for(i in 1:test.length){
+  post.data.vector[i] <- processing(pre.data.vector[i])
+}
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+`sapply()` for the complicated processing:
+```{r sapply-example} 
+rm(post.data.vector)
+start.time <- Sys.time()
+post.data.vector <- sapply(pre.data.vector,processing)
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+`vapply()` for the complicated processing:
+```{r vapply-example} 
+rm(post.data.vector)
+start.time <- Sys.time()
+post.data.vector <- vapply(pre.data.vector,processing,0)
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+A vectorised application:
+```{r function-application}
+rm(post.data.vector)
+start.time <- Sys.time()
+post.data.vector <- processing(pre.data.vector)
+end.time <- Sys.time()
+print(end.time - start.time)
+```   
+
+Take this DataCamp course to learn more:
+https://app.datacamp.com/learn/courses/writing-efficient-r-code.
+
+Extra reading about time and memory: https://www.burns-stat.com/documents/books/the-r-inferno/.

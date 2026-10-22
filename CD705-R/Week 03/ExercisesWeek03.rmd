@@ -76,12 +76,12 @@ test.hypothesis.v2 <- function(significance.level,sample.size,x.sample,probabili
 
 ```{r}
 df <- data.frame()
-for (sample.size in seq(10, 1000, by = 25)) {
+for (sample.size in seq(10, 1000, by = 20)) {
     n <- sample.size
     p.actual <- 0.5
     x <- rbinom(1, n, p.actual)
     alpha <- 0.05
-    possible.hypotheses <- seq(from=0,to=1,by=0.01);
+    possible.hypotheses <- seq(from=0,to=1,by=0.005);
     rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis.v2(alpha, n, x, p.h)})
     df <- rbind(df, data.frame(possible.hypotheses, rejected.hypotheses, n))
 }
@@ -101,10 +101,10 @@ We want to iterate across a range of values for p.
 
 ```{r}
 df <- data.frame()
-for (sample.size in seq(10, 1000, by = 100)) {
+for (sample.size in seq(10, 1000, by = 20)) {
     n <- sample.size
     p.actual <- seq(0, 1, by = 0.1)
-    for (p.actual in seq(0, 0.5, by = 0.1)) {
+    for (p.actual in seq(0, 1, by = 0.005)) {
         x.var <- rbinom(1, n, p.actual)
         alpha <- 0.05
         possible.hypothesis <- 0.5;
@@ -116,8 +116,7 @@ for (sample.size in seq(10, 1000, by = 100)) {
 plot(x=df$p.actual,
   y=rep_len(df$n,length(df$rejected.hypotheses)),
   col=c("blue","red")[df$rejected.hypotheses+1],
-pch=20,ylab="")
-
+pch=19,ylab="")
 ```
 
 For a given hypothesis, as we increase the sample size, we accept the hypothesis

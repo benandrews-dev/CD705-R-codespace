@@ -72,24 +72,51 @@ test.hypothesis <- function(significance.level,sample.size,x.sample,probability.
   p.value <- get.p.value(sample.size, x.sample,probability.hypothesised);
   return(p.value < significance.level);
 }
+
+get.rejected.hypotheses <- function(alpha, sample.size, x, possible.hypothesis) {
+  sapply(x,
+    function(x.tmp){
+      test.hypothesis(alpha, sample.size, x.tmp, possible.hypothesis)
+    }
+  )
+}
+
 ```  
 
 ```{r}
 df <- data.frame()
-for (sample.size in seq(10, 1000, by = 20)) {
-    n <- sample.size
-    p.actual <- 0.5
-    x <- rbinom(1, n, p.actual)
-    alpha <- 0.05
-    possible.hypotheses <- seq(from=0,to=1,by=0.005);
-    rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis(alpha, n, x, p.h)})
-    df <- rbind(df, data.frame(possible.hypotheses, rejected.hypotheses, n))
+
+p.actual <- 0.5
+alpha <- 0.05
+
+sample.size.min <- 5
+sample.size.max <- 100
+sample.size.num.points <- 50
+sample.size.values <- 
+  floor(seq(sample.size.min, sample.size.max, length.out = sample.size.num.points))
+
+possible.hypothesis.min <- 0
+possible.hypothesis.max <- 1
+possible.hypothesis.num.points <- 100
+possible.hypothesis.values <- 
+  seq(possible.hypothesis.min, possible.hypothesis.max, length.out = possible.hypothesis.num.points)
+
+for (sample.size in sample.size.values) {
+    x <- rbinom(1, sample.size, p.actual)
+    rejected.hypotheses <- get.rejected.hypotheses(alpha, sample.size, x, possible.hypothesis.values)
+    df <- rbind(df, data.frame(possible.hypothesis.values, rejected.hypotheses, sample.size))
 }
 
-plot(x=df$possible.hypotheses,
-  y=rep_len(df$n,length(df$rejected.hypotheses)),
+#df <- df[df$rejected.hypotheses == 0, ]
+str(df)
+
+plot(x=df$possible.hypothesis.values,
+  y=df$sample.size,
   col=c("blue","red")[df$rejected.hypotheses+1],
-pch=19,ylab="")
+  pch=19,
+  ylab="Sample Size",
+  xlab="Possible Hypotheses"
+)
 ```
 
 As we increase the sample size, we accept the hypothesis for a narrower range 
@@ -101,22 +128,36 @@ We want to iterate across a range of values for p and n.
 
 ```{r}
 df <- data.frame()
-for (sample.size in seq(10, 1000, by = 20)) {
-    n <- sample.size
-    p.actual <- seq(0, 1, by = 0.1)
-    for (p.actual in seq(0, 1, by = 0.005)) {
-        x.var <- rbinom(1, n, p.actual)
-        alpha <- 0.05
-        possible.hypothesis <- 0.5;
-        rejected.hypotheses <- sapply(x.var,function(x.xfoo){test.hypothesis(alpha, n, x.xfoo, possible.hypothesis)})
-        df <- rbind(df, data.frame(p.actual, rejected.hypotheses, n))
+
+alpha <- 0.05
+possible.hypothesis <- 0.5;
+
+sample.size.min <- 5
+sample.size.max <- 200
+sample.size.num.points <- 50
+sample.size.values <- 
+  floor(seq(sample.size.min, sample.size.max, length.out = sample.size.num.points))
+
+p.actual.min <- 0
+p.actual.max <- 1
+p.actual.num.points <- 200
+p.actual.values <- seq(p.actual.min, p.actual.max, length.out = p.actual.num.points)
+
+for (sample.size in sample.size.values) {
+    for (p.actual in p.actual.values) {
+        x <- rbinom(1, sample.size, p.actual)
+        rejected.hypotheses <- get.rejected.hypotheses(alpha, sample.size, x, possible.hypothesis)
+        df <- rbind(df, data.frame(p.actual, rejected.hypotheses, sample.size))
     }
 }
 
 plot(x=df$p.actual,
-  y=rep_len(df$n,length(df$rejected.hypotheses)),
+  y=df$sample.size,
   col=c("blue","red")[df$rejected.hypotheses+1],
-pch=19,ylab="")
+  pch=19,
+  xlab="p.actual",
+  ylab="Sample Size"
+)
 ```
 
 For a given hypothesis, as we increase the sample size, we accept the hypothesis
@@ -132,16 +173,30 @@ the confidence level 1 - $\alpha$ affect the results? Answer this question also 
 n = 100 and n = 1000.
 
 ```{r}
+
+sample.size.min <- 50
+sample.size.max <- 1000
+sample.size.num.points <- 20
+sample.size.values <- seq(sample.size.min, sample.size.max, length.out = sample.size.num.points)
+
+p.actual.min <- 0.01
+p.actual.max <- 0.5
+p.actual.num.points <- 200
+p.actual.values <- seq(p.actual.min, p.actual.max, length.out = p.actual.num.points)
+
+alpha.min <- 0.01
+alpha.max <- 0.5
+alpha.num.points <- 10
+alpha.values <- seq(alpha.min, alpha.max, length.out = alpha.num.points)
+
 df <- data.frame()
-for (sample.size in seq(50, 1000, by = 50)) {
-    n <- sample.size
-    #p.actual <- seq(0, 1, by = 0.01)
-    possible.hypothesis <- 0.5;
-    for (p.actual in seq(0, 1, by = 0.01)) {
-        x.var <- rbinom(1, n, p.actual)
-        for (alpha in seq(0.01, 0.5, by = 0.05)) {
-          rejected.hypotheses <- sapply(x.var,function(x.xfoo){test.hypothesis(alpha, n, x.xfoo, possible.hypothesis)})
-          df <- rbind(df, data.frame(p.actual, rejected.hypotheses, alpha, n))
+possible.hypothesis <- 0.5;
+for (sample.size in sample.size.values) {
+    for (p.actual in p.actual.values) {
+        x <- rbinom(1, sample.size, p.actual)
+        for (alpha in alpha.values) {
+          rejected.hypotheses <- get.rejected.hypotheses(alpha, sample.size, x, possible.hypothesis)
+          df <- rbind(df, data.frame(p.actual, rejected.hypotheses, alpha, sample.size))
         }
     }
 }
@@ -157,13 +212,13 @@ plot_ly(
   data = df,
   x = ~p.actual,
   y = ~alpha,
-  z = ~n,
+  z = ~sample.size,
   type = "scatter3d",
   mode = "markers",
   color = ~alpha,
   text = ~paste(
     "p.actual:", p.actual,
-    "<br>n:", n,
+    "<br>sample.size:", sample.size,
     "<br>alpha:", alpha,
     "<br>Rejected:", rejected.hypotheses
   ),
@@ -175,7 +230,7 @@ plot_ly(
     scene = list(
       xaxis = list(title = "p.actual"),
       yaxis = list(title = "alpha"),
-      zaxis = list(title = "n")
+      zaxis = list(title = "sample.size")
     )
   )
 ```

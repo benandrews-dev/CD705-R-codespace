@@ -32,7 +32,7 @@ n = 100 and n = 1000.
 ## Solution
 
 Code copied from the Week 3.1 R lecture companion...
-```{r function-test-hyp}
+```{r function-test-hyp-v1}
 test.hypothesis.v1 <- function(significance.level,sample.size,x.sample,probability.hypothesised){
   expected <- sample.size*probability.hypothesised;
   deviation <- abs(x.sample-expected);
@@ -70,49 +70,54 @@ get.p.value <- function(sample.size, x.sample, probability.hypothesised){
 
 test.hypothesis.v2 <- function(significance.level,sample.size,x.sample,probability.hypothesised){
   p.value <- get.p.value(sample.size, x.sample,probability.hypothesised);
-  #cat("p.value = ", p.value, "probability.hypothesised = ", probability.hypothesised, "x.sample = ", x.sample, "\n")
   return(p.value < significance.level);
 }
 ```  
 
 ```{r}
-n <- 100
-p.actual <- 0.4
-x <- rbinom(1, n, p.actual)
-alpha <- 0.05
-possible.hypotheses <- seq(from=0,to=1,by=0.01);
-rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis.v2(alpha, n, x, p.h)})
-plot(x=possible.hypotheses,
-  y=rep_len(1,length(rejected.hypotheses)),
-  col=c("blue","red")[rejected.hypotheses+1],
+df <- data.frame()
+for (sample.size in seq(10, 1000, by = 25)) {
+    n <- sample.size
+    p.actual <- 0.5
+    x <- rbinom(1, n, p.actual)
+    alpha <- 0.05
+    possible.hypotheses <- seq(from=0,to=1,by=0.01);
+    rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis.v2(alpha, n, x, p.h)})
+    df <- rbind(df, data.frame(possible.hypotheses, rejected.hypotheses, n))
+}
+
+plot(x=df$possible.hypotheses,
+  y=rep_len(df$n,length(df$rejected.hypotheses)),
+  col=c("blue","red")[df$rejected.hypotheses+1],
 pch=19,ylab="")
 ```
 
-
-```{r}
-for (exponent in 1:6) {
-    n <- (10 ^ exponent)
-    p <- 0.2
-    p.hypothesised <- 0.3
-    x <- rbinom(1, n, p)
-    is.rejected <- test.hypothesis.v2(0.05, x, p.hypothesised)
-    cat("n =", n, ", p =", p, ", x =", x, ", X = ", x/n, ", rejected =", is.rejected, "\n")
-}
-```
+As we increase the sample size, we accept the hypothesis for a narrower range 
+of values for p.
 
 Moving on to part (b)...
 
 We want to iterate across a range of values for p.
 
 ```{r}
-for (p in seq(0.1, 0.9, by = 0.1)) {
-    n <- 1000
-    p.hypothesised <- 0.5
-    x <- rbinom(1, n, p)
-    #p.value <- get.pval.for.hypothesis.binom(x, p.hypothesised)
-    is.rejected <- test.hypothesis(0.05, n, x, p.hypothesised)
-    cat("n =", n, ", p =", p, ", x =", x, ", X = ", x/n, ", rejected =", is.rejected, "\n")
+df <- data.frame()
+for (sample.size in seq(10, 1000, by = 100)) {
+    n <- sample.size
+    p.actual <- seq(0, 1, by = 0.1)
+    for (p.actual in seq(0, 0.5, by = 0.1)) {
+        x.var <- rbinom(1, n, p.actual)
+        alpha <- 0.05
+        possible.hypothesis <- 0.5;
+        rejected.hypotheses <- sapply(x.var,function(x.xfoo){test.hypothesis.v2(alpha, n, x.xfoo, possible.hypothesis)})
+        df <- rbind(df, data.frame(p.actual, rejected.hypotheses, n))
+    }
 }
+
+plot(x=df$p.actual,
+  y=rep_len(df$n,length(df$rejected.hypotheses)),
+  col=c("blue","red")[df$rejected.hypotheses+1],
+pch=20,ylab="")
+
 ```
 
 For a given hypothesis, as we increase the sample size, we accept the hypothesis
@@ -127,7 +132,7 @@ for (p.hypothesised in seq(0, 1, by = 0.1)) {
     p <- 0.2
     x <- rbinom(1, n, p)
     #p.value <- get.pval.for.hypothesis.binom(x, p.hypothesised)
-    is.rejected <- test.hypothesis(0.05, n, x, p.hypothesised)
+    is.rejected <- test.hypothesis.v2(0.05, n, x, p.hypothesised)
     cat("n =", n, ", p.hypothesised =", p.hypothesised, ", p =", p, ", x =", x, ", X = ", x/n, ", rejected =", is.rejected, "\n")
 }
 ```

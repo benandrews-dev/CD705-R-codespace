@@ -133,22 +133,18 @@ n = 100 and n = 1000.
 
 ```{r}
 df <- data.frame()
-for (sample.size in seq(50, 500, by = 10)) {
+for (sample.size in seq(50, 1000, by = 50)) {
     n <- sample.size
     #p.actual <- seq(0, 1, by = 0.01)
     possible.hypothesis <- 0.5;
-    for (p.actual in seq(0, 1, by = 0.1)) {
+    for (p.actual in seq(0, 1, by = 0.01)) {
         x.var <- rbinom(1, n, p.actual)
-        for (alpha in seq(0.01, 0.1, by = 0.01)) {
+        for (alpha in seq(0.01, 0.5, by = 0.05)) {
           rejected.hypotheses <- sapply(x.var,function(x.xfoo){test.hypothesis(alpha, n, x.xfoo, possible.hypothesis)})
           df <- rbind(df, data.frame(p.actual, rejected.hypotheses, alpha, n))
         }
     }
 }
-
-xvals <- df$p.actual
-yvals <- df$n
-zvals <- df$alpha
 ```
 
 ```{r}
@@ -160,12 +156,11 @@ df <- df[df$rejected.hypotheses == 0, ]
 plot_ly(
   data = df,
   x = ~p.actual,
-  y = ~n,
-  z = ~alpha,
+  y = ~alpha,
+  z = ~n,
   type = "scatter3d",
   mode = "markers",
-  color = ~rejected.hypotheses+1,
-  colors = c("blue", "red"),
+  color = ~alpha,
   text = ~paste(
     "p.actual:", p.actual,
     "<br>n:", n,
@@ -174,12 +169,13 @@ plot_ly(
   ),
   hoverinfo = "text",
   marker = list(size = 4)
+  #color_continuous_scale=plot_ly.express.colors.sequential.Rainbow
 ) %>%
   layout(
     scene = list(
       xaxis = list(title = "p.actual"),
-      yaxis = list(title = "n"),
-      zaxis = list(title = "alpha")
+      yaxis = list(title = "alpha"),
+      zaxis = list(title = "n")
     )
   )
 ```

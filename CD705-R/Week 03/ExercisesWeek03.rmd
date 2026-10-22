@@ -31,6 +31,108 @@ n = 100 and n = 1000.
 
 ## Solution
 
+Code copied from the Week 3.1 R lecture companion...
+```{r function-test-hyp}
+test.hypothesis.v1 <- function(significance.level,sample.size,x.sample,probability.hypothesised){
+  expected <- sample.size*probability.hypothesised;
+  deviation <- abs(x.sample-expected);
+  lower.bound <- expected - deviation;
+  upper.bound <- expected + deviation;
+  upper.bound <- ifelse( (upper.bound-floor(upper.bound)) < .Machine$double.eps, 
+                         upper.bound - 1,floor(upper.bound))
+  p.value <- 
+    pbinom(lower.bound,sample.size,probability.hypothesised) + 
+    1 - pbinom(upper.bound,sample.size,probability.hypothesised);
+  return(p.value < significance.level);
+}
+```  
+... and modified to answer the questions above...
+
+```{r function-test-hyp}
+get.p.value <- function(sample.size, x.sample, probability.hypothesised){
+  expected <- sample.size*probability.hypothesised;
+  deviation <- abs(x.sample-expected);
+  lower.bound <- expected - deviation;
+  upper.bound <- expected + deviation;
+  upper.bound <- sapply(upper.bound, function(ub) {
+    if ((ub-floor(ub)) < .Machine$double.eps) {
+      return(ub - 1)
+    } else {
+      return(floor(ub))
+    }
+  })
+
+  p.value <- 
+    pbinom(lower.bound,sample.size,probability.hypothesised) + 
+    1 - pbinom(upper.bound,sample.size,probability.hypothesised);
+  return(p.value);
+}
+
+test.hypothesis.v2 <- function(significance.level,sample.size,x.sample,probability.hypothesised){
+  p.value <- get.p.value(sample.size, x.sample,probability.hypothesised);
+  #cat("p.value = ", p.value, "probability.hypothesised = ", probability.hypothesised, "x.sample = ", x.sample, "\n")
+  return(p.value < significance.level);
+}
+```  
+
+```{r}
+n <- 100
+p.actual <- 0.4
+x <- rbinom(1, n, p.actual)
+alpha <- 0.05
+possible.hypotheses <- seq(from=0,to=1,by=0.01);
+rejected.hypotheses <- sapply(possible.hypotheses,function(p.h){test.hypothesis.v2(alpha, n, x, p.h)})
+plot(x=possible.hypotheses,
+  y=rep_len(1,length(rejected.hypotheses)),
+  col=c("blue","red")[rejected.hypotheses+1],
+pch=19,ylab="")
+```
+
+
+```{r}
+for (exponent in 1:6) {
+    n <- (10 ^ exponent)
+    p <- 0.2
+    p.hypothesised <- 0.3
+    x <- rbinom(1, n, p)
+    is.rejected <- test.hypothesis.v2(0.05, x, p.hypothesised)
+    cat("n =", n, ", p =", p, ", x =", x, ", X = ", x/n, ", rejected =", is.rejected, "\n")
+}
+```
+
+Moving on to part (b)...
+
+We want to iterate across a range of values for p.
+
+```{r}
+for (p in seq(0.1, 0.9, by = 0.1)) {
+    n <- 1000
+    p.hypothesised <- 0.5
+    x <- rbinom(1, n, p)
+    #p.value <- get.pval.for.hypothesis.binom(x, p.hypothesised)
+    is.rejected <- test.hypothesis(0.05, n, x, p.hypothesised)
+    cat("n =", n, ", p =", p, ", x =", x, ", X = ", x/n, ", rejected =", is.rejected, "\n")
+}
+```
+
+For a given hypothesis, as we increase the sample size, we accept the hypothesis
+for a narrower range of values for p.
+
+Part (c) is similar to part 2, but we iterate across a range of values for 
+p.hypothesised.
+
+```{r}
+for (p.hypothesised in seq(0, 1, by = 0.1)) {
+    n <- 1000
+    p <- 0.2
+    x <- rbinom(1, n, p)
+    #p.value <- get.pval.for.hypothesis.binom(x, p.hypothesised)
+    is.rejected <- test.hypothesis(0.05, n, x, p.hypothesised)
+    cat("n =", n, ", p.hypothesised =", p.hypothesised, ", p =", p, ", x =", x, ", X = ", x/n, ", rejected =", is.rejected, "\n")
+}
+```
+
+
 # Exercise 2
 
 The manufacturer claims that the median lifetime of a component is 25
@@ -50,7 +152,6 @@ One hundred and ten adults resident in a UK area are chosen at random
 to take part in a survey about personal savings. Forty two of them are found to hold
 premium bonds. Find a 95% confidence interval for the proportion of adults resident in
 the UK area who have premium bond holdings.
-
 
 ## Solution
 

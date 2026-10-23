@@ -181,12 +181,12 @@ sample.size.values <- seq(sample.size.min, sample.size.max, length.out = sample.
 
 p.actual.min <- 0.01
 p.actual.max <- 0.5
-p.actual.num.points <- 200
+p.actual.num.points <- 300
 p.actual.values <- seq(p.actual.min, p.actual.max, length.out = p.actual.num.points)
 
 alpha.min <- 0.01
 alpha.max <- 0.5
-alpha.num.points <- 10
+alpha.num.points <- 5
 alpha.values <- seq(alpha.min, alpha.max, length.out = alpha.num.points)
 
 df <- data.frame()

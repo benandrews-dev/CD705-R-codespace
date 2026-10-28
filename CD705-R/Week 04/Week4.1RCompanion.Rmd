@@ -1,0 +1,219 @@
+---
+title: "| CD705 Statistical Data Analysis with R \n|\n| 
+        Week 4.1: R Lecture Companion\n|\n|\n"
+author: "Alexey Chernov"
+date: "28 October 2026"
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+#options(width = 120)
+knitr::opts_chunk$set(fig.width=10,fig.height=10,fig.align='center')
+```
+
+```{r setup}
+set.seed(31102022)
+n.simulations <- 1e6
+```  
+
+# 1. Two Fair Games
+
+```{r game-setup}
+num.attempts <- 20
+simulate.game <- function(outcomes,probabilities,reps=10^(1:5)){
+  for(repetitions in reps){
+    total.in.game.runs <- replicate(num.attempts,
+                                sum(sample(outcomes,repetitions,TRUE,probabilities)))
+    cat(paste0("The total gain in ",as.integer(repetitions)," plays may be:\n"))
+    cat(total.in.game.runs)
+    cat("\n\n")
+  }
+}
+```  
+
+Game 1:
+```{r game-1}
+outcomes.1 <- c(-1,1)
+probs.1 <- c(0.5,0.5)
+cat(paste("Expectation in Game 1 is",sum(outcomes.1*probs.1)))
+simulate.game(outcomes.1,probs.1)
+```   
+
+Game 3:
+```{r game-3}
+outcomes.3 <- c(-999,1)
+probs.3 <- c(0.001,0.999)
+cat(paste("Expectation in Game 3 is",sum(outcomes.3*probs.3)))
+simulate.game(outcomes.3,probs.3)
+```   
+
+# 2. Expectation and Variance Example
+
+This example continues Exercise 5(i), Week 2.
+```{r ex5(i)-wk2-analytical}
+x<-c(0,1,2,3)
+p<-c(0.125,0.375,0.375,0.125)
+(EX <- sum(x*p))
+sum((x-EX)^2*p)
+sum(x^2*p) - (EX)^2
+``` 
+
+We can obtain (approximately) the same results by simulations:
+```{r ex5(i)-wk2-simulations}
+sample.example <- sample(x,n.simulations,replace=TRUE,prob=p)
+mean(sample.example)
+var(sample.example)
+```   
+
+# 3. Expectation and Variance: Sample from a Population
+
+```{r pop-set}
+population.size <- 1e4
+population.IQ <- rnorm(population.size,100,15)
+cat(paste0("Population IQ expectation: ",mean(population.IQ),
+           "\n Population IQ variance: ",var(population.IQ),
+           "\n Population IQ standard deviation: ",sd(population.IQ)))
+```  
+
+Let's simulate sampling without replacement from a population (note that this does not give us a hypergeometric distribution as we sample real numbers, not 0s and 1s):
+```{r pop-sample}
+small.sample.size <- 20
+for(i in 1:5){
+  sample.IQ <- sample(population.IQ,small.sample.size,replace=FALSE)
+  cat(paste0("Sample IQ expectation: ",mean(sample.IQ),"\n",
+             "Sample IQ variance: ",var(sample.IQ),"\n",
+             "Sample IQ standard deviation: ",sd(sample.IQ),"\n\n"))
+}
+```  
+
+The next comparison demonstrates the effect of the finite population correction (FPC). 
+The variance of the sample mean is equal to the population variance divided by the sample size and multiplied 
+by the FPC:
+```{r pop-samples-small-and-large}
+# this simulation is slow as it is not implemented efficiently!
+n.sim <- 1e4
+cat(paste0("The variance of the mean for a small sample is: ",
+           small.sample.size *
+             var(replicate(n.sim,mean(sample(population.IQ,small.sample.size,replace=FALSE)))),"\n"))
+
+large.sample.size <- population.size/2
+cat(paste0("The variance of the mean for a large sample is: ",
+           large.sample.size *
+             var(replicate(n.sim,mean(sample(population.IQ,large.sample.size,replace=FALSE)))),"\n"))
+```  
+
+# 4. Distributions, Expectations and Variances
+
+Let's plot several distributions and their respective expectations and standard deviations.
+```{r settings}
+prob <- c(0.5,0.4,0.3,0.2,0.1,0.05)
+size <- 100
+population <- 200
+```  
+
+### Binomial Distribution
+
+```{r binom,fig.width=10,fig.height=10}
+par(mfrow=c(3,2))
+for (p in prob){
+  binom.mean <- size*p
+  binom.std <- sqrt(size*p*(1-p))
+  bounds <- binom.mean + c(-1,0,1)*binom.std
+  sample <- rbinom(n.simulations,size,p)
+  hist(sample,breaks=0:size,main=paste("Binomial p=",p,sep=""),
+       xlab=paste("range: ",paste0(range(sample),collapse=" - "),
+                  ", outside blue: ",
+                  length(sample[sample<bounds[1] | sample>bounds[3]])/n.simulations*100,
+                  "%","\n",
+                  "Mean: ",round(mean(sample),digits=3)," vs. ",
+                  round(bounds[2],digits=3),
+                  "; St. Dev.: ",round(sd(sample),digits=3)," vs. ",
+                  round(bounds[3]-bounds[2],digits=3)));
+  abline(v=bounds[2],col="red");
+  abline(v=bounds[1],col="blue");abline(v=bounds[3],col="blue")
+}
+```   
+
+### Hypergeometric Distribution
+
+```{r hyper,fig.width=10,fig.height=10}
+par(mfrow=c(3,2))
+for (p in prob){
+  hg.mean <- size*p
+  hg.std <- sqrt(size*p*(1-p)*(1-(size-1)/(population-1)))
+  bounds <- hg.mean + c(-1,0,1)*hg.std
+  sample <- rhyper(n.simulations,p*population,(1-p)*population,size)
+  hist(sample,breaks=0:size,
+       main=paste("Hypergeometric M=",p*population," N=",population,sep=""),
+       xlab=paste("range: ",paste0(range(sample),collapse=" - "),
+                  ", outside blue: ",
+                  length(sample[sample<bounds[1] | sample>bounds[3]])/n.simulations*100,
+                  "%","\n",
+                  "Mean: ",round(mean(sample),digits=3)," vs. ",
+                  round(bounds[2],digits=3),
+                  "; St. Dev.: ",round(sd(sample),digits=3)," vs. ",
+                  round(bounds[3]-bounds[2],digits=3)));
+  abline(v=bounds[2],col="red");
+  abline(v=bounds[1],col="blue");abline(v=bounds[3],col="blue")
+}
+```   
+
+### Exponential Distribution
+
+```{r exp,fig.width=10,fig.height=10}
+lambda <- prob*size
+par(mfrow=c(3,2))
+for (l in lambda){
+  exp.mean <- 1/l
+  exp.std <- 1/l
+  bounds <- exp.mean + c(-1,0,1)*exp.std
+  sample <- rexp(n.simulations,l)
+  range.sample <- range(sample)
+  hist(sample,breaks=round(5*(range.sample[2]-range.sample[1])/exp.std),
+       main=paste("Exponential lambda=",l,sep=""),
+       xlab=paste("range: ",paste0(round(range.sample,digits=6),collapse=" - "),
+                  ", outside blue: ",
+                  length(sample[sample<bounds[1] | sample>bounds[3]])/n.simulations*100,
+                  "%","\n",
+                  "Mean: ",round(mean(sample),digits=3)," vs. ",
+                  round(bounds[2],digits=3),
+                  "; St. Dev.: ",round(sd(sample),digits=3)," vs. ",
+                  round(bounds[3]-bounds[2],digits=3)));
+  abline(v=bounds[2],col="red");
+  abline(v=bounds[1],col="blue");abline(v=bounds[3],col="blue")
+}
+```   
+
+
+# 5. Expectation and Variance: (In)dependent Variables
+
+Let's simulate values of several random variables and estimate their mean and variance from the simulated values. 
+
+```{r}
+X <- rpois(n.simulations,2) 
+# random values from a Poisson distribution, for no particular reason
+Y <- rpois(n.simulations,3)
+Z <- 2*X
+W <- X+Y
+U <- Z+W
+my.format <- function(data){
+  paste(
+    paste0("mean ",round(mean(data),digits=2),","),
+    paste0("variance  ",round(var(data),digits=1),","),
+    paste0("std ",round(sd(data),digits=3)),
+    sep="\t\t")
+}
+cat(paste0(
+  paste0("X:     ",my.format(X),"\n"),
+  paste0("Y:     ",my.format(Y),"\n"),
+  paste0("Z=2X:  ",my.format(Z),"\n"),
+  paste0("W=X+Y: ",my.format(W),"\n"),
+  paste0("U=Z+W: ",my.format(U),"\n")
+))
+```   
+
+
+
+
+
+
+` `

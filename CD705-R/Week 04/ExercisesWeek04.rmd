@@ -1,0 +1,474 @@
+---
+title: "CD705: Exercises, Week 4"
+date: 28 October 2026
+---
+
+
+# Exercise 1. 
+Calculate the standard deviations for
+• all distributions in Exercise 5, Week 2;
+• the profit in both cases in Exercise 8, Week 2.
+
+## Solution
+### Standard deviations for Exercise 5, Week 2
+
+\begin{align*}
+E(X) &= \sum x_i p_i \\
+\text{Var}(X) &= E(X - E(X))^2 = \sum (x_i - E(X))^2 p_i \\
+\text{Var}(X) &= E(X^2) - (E(X))^2 = \sum x_i^2 p_i - (E(X))^2 \\
+\sigma &= \sqrt{\text{Var}(X)}
+\end{align*}
+
+```{r}
+num.simulations <- 1e6
+my.sd <- function(x,p){
+  # using the formula Var(X) = E(X^2) - (EX)^2
+  cat(paste0("Theoretical value: ",sqrt(sum(x^2*p) - sum(x*p)^2),"\n"))
+  cat(paste0("Simulated value: ",sd(sample(x,num.simulations,replace=TRUE,prob=p)),"\n"))
+}
+```
+
+1. 
+
+```{r}
+x<-c(0,1,2,3)
+p<-c(0.125,0.375,0.375,0.125)
+
+E_X <- sum(x*p)
+Var_X <- sum((x-E_X)^2*p)
+sd_X <- sqrt(Var_X) 
+sd_X   
+my.sd(x,p)
+```
+
+2. 
+
+```{r}
+x<-c(20,25,30,35)
+p<-c(0.2,0.15,0.25,0.4)
+
+E_X <- sum(x*p)
+Var_X <- sum((x-E_X)^2*p)
+sd_X <- sqrt(Var_X) 
+sd_X   
+my.sd(x,p) 
+```
+
+3. 
+
+```{r}
+x<-c(0,1,2,3,4,5)
+p<-c(0.18,0.39,0.24,0.14,0.04,0.01)
+E_X <- sum(x*p)
+Var_X <- sum((x-E_X)^2*p)
+sd_X <- sqrt(Var_X) 
+sd_X   
+my.sd(x,p)
+```
+
+4. 
+
+```{r}
+x<-c(-100,0,50,100,150,200)
+p<-c(0.1,0.2,0.3,0.25,0.1,0.05)
+E_X <- sum(x*p)
+Var_X <- sum((x-E_X)^2*p)
+sd_X <- sqrt(Var_X) 
+sd_X   
+my.sd(x,p)
+```
+
+### The profit in both cases in Exercise 8, Week 2
+
+A reminder of the problem...
+
+> A company is contracted to finish a e100 000 project by 31 December. If
+the company does not complete the project on time, a penalty of e8000 per month (or
+part of a month) is incurred. The company estimates that if it continues alone there will
+be a 40% chance of completing on time and that the project may be one, two, three or
+four months late with equal probability.
+Subcontractors can be hired by the firm at a cost of e18 000. If the subcontractors
+are hired then the probability that the company completes on time is doubled. If the
+project is still late it will now be only one or two months late with equal probability.
+State which option is better for the company after determining the expected profit when
+(i) subcontractors are not used;
+(ii) subcontractors are used.
+
+#### Subcontractors are not used
+```{r}
+x<-c(100000, 92000, 84000, 76000, 68000)
+p<-c(0.4, 0.15, 0.15, 0.15, 0.15)
+E_X <- sum(x*p)
+Var_X <- sum((x-E_X)^2*p)
+sd_X <- sqrt(Var_X)
+cat(paste0("Expected profit: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+#### Subcontractors are used
+```{r}
+x<-c(100000, 92000, 84000)
+p<-c(0.4, 0.3, 0.3)
+x <- x - 18000 # subtract the cost of subcontractors
+
+E_X <- sum(x*p)
+Var_X <- sum((x-E_X)^2*p)
+sd_X <- sqrt(Var_X)
+cat(paste0("Expected profit: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+The expected profit is higher when subcontractors are not used, but the 
+standard deviation is lower when subcontractors are used. The company should 
+consider its risk tolerance when making a decision.
+
+# Exercise 2. 
+Calculate the expectation and the standard deviation for:
+• the number of invoices paid within 10 days in Exercise 10, Week 2;
+• the number of selected people in Exercise 11, Week 2;
+• the number of ex-smokers in the sample in Exercise 12, Week 2;
+• the number of children with a high blood lead level in each of the three situations
+of Exercise 14, Week 2;
+
+## Solution
+### The number of invoices paid within 10 days in Exercise 10, Week 2
+
+> A firm offers a 1% early-payment discount if an invoice is paid within 10
+days and the full amount is due after 10 days. In the past, 30% of all invoices have been
+paid within 10 days. If the firm sends out 8 invoices during the first week of January...
+
+```{r}
+n <- 8
+p <- 0.3
+E_X <- n*p
+Var_X <- n*p*(1-p)
+sd_X <- sqrt(Var_X)
+cat(paste0("Expected number of invoices paid within 10 days: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+### The number of selected people in Exercise 11, Week 2
+
+> Each of 2208 people has a 5% chance to be selected, independently of each
+other. Find the probability that the number of selected people will be
+(i) exactly 110; (ii) greater than 120; (iii) less than 100; (iv) between 90 and 110.
+
+1. X = 110
+
+```{r}
+n <- 2208
+p <- 0.05
+E_X <- n*p
+Var_X <- n*p*(1-p)
+sd_X <- sqrt(Var_X)
+
+# Calculate the probability using the normal approximation
+x <- 110
+z <- (x - E_X) / sd_X
+p <- pnorm(z)
+cat(paste0("Probability of exactly 110 selected people: ",p,"\n"))
+```
+
+2. X > 120
+
+```{r}
+x <- 120
+z <- (x - E_X) / sd_X
+p <- 1 - pnorm(z)
+cat(paste0("Probability of more than 120 selected people: ",p,"\n"))
+```
+
+3. X < 100
+
+```{r}
+x <- 100
+z <- (x - E_X) / sd_X
+p <- pnorm(z)
+cat(paste0("Probability of less than 100 selected people: ",p,"\n"))
+```
+
+4. 90 < X < 110
+
+```{r}
+x1 <- 90
+x2 <- 110
+z1 <- (x1 - E_X) / sd_X
+z2 <- (x2 - E_X) / sd_X
+p <- pnorm(z2) - pnorm(z1)
+cat(paste0("Probability of between 90 and 110 selected people: ",p,"\n"))
+```
+
+### The number of ex-smokers in the sample in Exercise 12, Week 2
+
+> In 2015, ex-smokers constituted 34.0% of all adults in the UK. For a survey,
+a sample of 1 500 people was selected selected uniformly at random from all adults in the
+UK. Calculate the probabilities that the number of ex-smokers in the sample will be
+(i) exactly 510; (ii) between 500 and 520 inclusive; (iii) between 470 and 550 inclusive.
+
+1. X = 510
+
+```{r}
+n <- 1500
+p <- 0.34
+E_X <- n*p
+Var_X <- n*p*(1-p)
+sd_X <- sqrt(Var_X)
+
+cat(paste0("Expected number of ex-smokers: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+```{r}
+# Calculate the probability using the normal approximation
+x <- 510
+z <- (x - E_X) / sd_X
+p <- pnorm(z)
+cat(paste0("Probability of exactly 510 ex-smokers: ",p,"\n"))
+```
+
+2. 500 ≤ X ≤ 520
+
+```{r}
+x1 <- 500
+x2 <- 520
+z1 <- (x1 - E_X) / sd_X
+z2 <- (x2 - E_X) / sd_X
+p <- pnorm(z2) - pnorm(z1)
+cat(paste0("Probability of between 500 and 520 ex-smokers: ",p,"\n"))
+```
+
+3. 470 ≤ X ≤ 550
+
+```{r}
+x1 <- 470
+x2 <- 550
+z1 <- (x1 - E_X) / sd_X
+z2 <- (x2 - E_X) / sd_X
+p <- pnorm(z2) - pnorm(z1)
+cat(paste0("Probability of between 470 and 550 ex-smokers: ",p,"\n"))
+```
+
+### The number of children with a high blood lead level in each of the three situations of Exercise 14, Week 2
+
+> Childhood lead poisoning due to atmospheric pollution is a major public
+health concern. Consider the following three situations:
+(a) In a group of 100 children, 20 have a high blood lead level.
+(b) In a group of 1000 children, 200 have a high blood lead level.
+(c) In a certain population, 1 child in 5 has a high blood lead level.
+
+#### Situation (a)
+
+```{r}
+# This is a hypergeometric distribution problem.
+N <- 100 # total number of children
+K <- 20  # number of children with high blood lead level
+n <- 10 # number of children sampled
+E_X <- n * (K / N)
+Var_X <- n * (K / N) * (1 - K / N) * ((N - n) / (N - 1))
+sd_X <- sqrt(Var_X)
+cat(paste0("Expected number of children with high blood lead level: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+#### Situation (b)
+
+```{r}
+# This is a hypergeometric distribution problem.
+N <- 1000 # total number of children
+K <- 200  # number of children with high blood lead level
+n <- 10 # number of children sampled
+E_X <- n * (K / N)
+Var_X <- n * (K / N) * (1 - K / N) * ((N - n) / (N - 1))
+sd_X <- sqrt(Var_X)
+cat(paste0("Expected number of children with high blood lead level: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+#### Situation (c)
+```{r}
+# This is a binomial distribution problem.
+n <- 10 # number of children sampled
+p <- 1/5 # probability of a child having high blood lead level
+E_X <- n * p
+Var_X <- n * p * (1 - p)
+sd_X <- sqrt(Var_X)
+cat(paste0("Expected number of children with high blood lead level: ",E_X,"\n"))
+cat(paste0("Standard deviation: ",sd_X,"\n"))
+```
+
+# Exercise 3. 
+For Exercise 13, Week 2, calculate E X, E Y , Var(X), Var(Y ), E(X - Y ),
+and Var(X - Y ). (Hint: How are X and Y connected?)
+
+## Solution
+
+> There are 10 boys and 15 girls in a class. For a survey, 8 students are to
+be selected from the class. They are selected at random. Let X denote the number of
+boys that are selected, and let Y denote the number of girls that are selected.
+
+We're going to consider this as a hypergeometric distribution problem. 
+The total number of students is 25, with 10 boys and 15 girls. 
+We are selecting 8 students.
+
+Hypergeometric distribution properties:
+$$E(X) = n * (K / N)$$
+$$Var(X) = n * (K / N) * (1 - K / N) * ((N - n) / (N - 1))$$
+
+$$
+X: N = 25, K = 10, n = 8\\
+Y: N = 25, K = 15, n = 8
+$$
+
+$$E(X) = 8 * (10 / 25) = 3.2$$
+$$\begin{align*}
+Var(X) &= 8 * (10 / 25) * (1 - 10 / 25) * ((25 - 8) / (25 - 1))\\
+&= 8 * 0.4 * 0.6 * (17 / 24)\\
+&= 8 * 0.4 * 0.6 * 0.7083333 = 1.36
+\end{align*}$$
+
+$$E(Y) = 8 * (15 / 25) = 4.8$$
+$$\begin{align*}
+Var(Y) &= 8 * (15 / 25) * (1 - 15 / 25) * ((25 - 8) / (25 - 1))\\
+&= 8 * 0.6 * 0.4 * (17 / 24)\\
+&= 8 * 0.6 * 0.4 * 0.7083333 = 1.36
+\end{align*}$$
+
+$$E(X - Y) = E(X) - E(Y) = 3.2 - 4.8 = -1.6$$
+
+X and Y are connected because the total number of students selected is 8, 
+so X + Y = 8. Therefore, 
+$$\begin{align*}
+X - Y &= X - (8 - X) = 2X - 8\\
+Var(X - Y) &= Var(2X - 8)\\
+&= 4 * Var(X)\\
+&= 4 * 1.36 = 5.44
+\end{align*}$$
+
+```{r}
+for (N in 10^(2*(1:4))){
+  boys_sample <- rhyper(N, 10, 15, 8)
+  girls_sample <- 8 - boys_sample
+  E_X <- mean(boys_sample)
+  Var_X <- var(boys_sample)
+  E_Y <- mean(girls_sample)
+  Var_Y <- var(girls_sample)
+  E_X_minus_Y <- mean(boys_sample - girls_sample)
+  Var_X_minus_Y <- var(boys_sample - girls_sample)
+  cat(paste0("N = ", N, "\n"))
+  cat(paste0("E(X) = ", E_X, "\n"))
+  cat(paste0("Var(X) = ", Var_X, "\n"))
+  cat(paste0("E(Y) = ", E_Y, "\n"))
+  cat(paste0("Var(Y) = ", Var_Y, "\n"))
+  cat(paste0("E(X - Y) = ", E_X_minus_Y, "\n"))
+  cat(paste0("Var(X - Y) = ", Var_X_minus_Y, "\n\n"))
+}
+```
+
+# Exercise 4. 
+Suppose that the proportion of defective items in a large lot is p, and suppose
+that a random sample of n items is selected from the lot. Let X denote the number of
+defective items in the sample, and let Y denote the number of nondefective items in the
+sample. Find E(X - Y ) and Var(X - Y ).
+
+## Solution
+
+For a large lot, we can ignore the finite population correction factor and 
+treat X and Y as independent binomial random variables.
+
+
+$$E(X) = n * (np / n) = np$$
+$$E(Y) = n * (n(1-p) / n) = n(1-p)$$
+
+$$E(X - Y) = E(X) - E(Y) = np - n(1-p) = np - n + np = 2np - n$$
+
+
+# Exercise 5. 
+Let X and Y be independent random variables. Express Var(X + Y ) and
+Var(X - Y ) through Var(X) and Var(Y ).
+
+## Solution
+
+
+# Exercise 6. 
+Odds in a horse race betting are defined as follows: 3/1 (three to one against)
+means a horse is expected to win once for every three times it loses; 3/2 means two wins
+out of five races; 4/5 (five to four on) means five wins for every four defeats, etc.
+(a) Translate the above odds into ‘probabilities’ of victory.
+(b) In a certain race in France the odds for the five runners were:
+Phillipe Bois 1/1
+Gallante Effor 5/2
+Satin Noir 11/2
+Victoire Antheme 9/1
+Comme Rambleur 16/1
+Calculate the ‘probabilities’ and their sum.
+1
+(c) How much would a bookmaker expect to profit in the long run at such odds if it
+is assumed each horse is backed equally? (Hint: assume the true probabilities are
+proportional to the ‘probabilities’ just calculated and consider the payouts corresponding to a notional e1 wager being placed on each horse.)
+(d) What would the bookmaker’s expected profit and its standard deviation have been
+if horses had been backed in line with the true probabilities?
+
+## Solution
+
+# Exercise 7. 
+The manager of a stockroom in a factory knows from her records that a
+certain tool is demanded once on 50% of days and twice on 40% of days, and it is not
+demanded at all on the remaining days. Calculate the expected daily demand and its
+standard deviation. If it costs £10 each time the tool is used, calculate the expected daily
+cost together with its standard deviation.
+
+## Solution
+
+# Exercise 8. 
+A firm needs two types of chemicals for independent manufacturing processes affected by many random factors. The weekly consumption of the first chemical
+has the expectation of 40 gallons and the standard deviation of 2 gallons. The weekly
+consumption of the second chemical has the expectation of 65 gallons and the standard
+deviation of 3 gallons. The first chemical costs £5 per gallon, while the second chemical
+costs £3 per gallon Calculate the mean and the standard deviation of the total weekly
+amount spent for these two chemicals.
+
+## Solution
+
+# Exercise 9. 
+The inside diameter of a cylindrical tube is a random variable with the mean
+of 3 cm and the standard deviation of 0.02 cm. The thickness of the tube is a random
+variable with the mean of 0.3 cm and the standard deviation of 0.005 cm. Assuming that
+the two random variables are independent, find the mean and standard deviation of the
+outside diameter of the tube.
+
+## Solution
+
+# Exercise 10. 
+The length of a certain brick is a random variable with the mean of 8
+inches and the standard deviation of 0.1 inches. What is the mean and the standard
+deviation of the length of a wall made of 50 of these bricks laid side by side? Assume
+that the lengths of all bricks are independent.
+
+## Solution
+
+# Exercise 11. 
+According to a specification, the lifetime of type A lightbulbs has the
+mean of 1000 hours with the standard deviation of 100 hours, while the lifetime of type
+B lightbulbs has the mean of 1200 hours with the standard deviation of 150 hours.
+20 bulbs of type A and 25 bulbs of type B are to be used for an experimental testing
+of the difference in their lifetimes. Assuming that these bulbs are made according to
+the specification and that all bulb lifetimes are independent of each other, calculate
+the expected value and standard deviation of the difference between the sample average
+lifetimes for the two types of bulbs.
+
+## Solution
+
+# Exercise 12. 
+Suppose that X and Y are independent random variables such that E X =
+E Y and the variances of X and Y exist. Show that E(X − Y )
+2 = Var(X) + Var(Y ).
+
+## Solution
+
+# Exercise 13. 
+Suppose that on each play of a certain game a gambler is equally likely
+to win or to lose. Suppose that when he wins, his fortune is doubled, and that when he
+loses, his fortune is cut in half. If he begins playing with a fortune of £1024, what is
+the expected value of his fortune after a sequence of (i) 1; (ii) 2; (iii) 3; (iv) 5; (v) 100;
+(vi) n independent plays of the game? (The last question, a general formula for any n,
+is optional as it requires more mathematical skills than expected on this course.)

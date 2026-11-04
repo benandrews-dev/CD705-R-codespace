@@ -1,0 +1,406 @@
+\DocumentMetadata{
+    testphase={phase-III}, % enables tagging
+    pdfstandard=A-2b     % declares that the pdf supports the A-2b standard
+}
+
+\documentclass[12pt]{article}
+\usepackage{enumitem,xcolor,amsmath}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{geometry}
+
+
+%%
+%% The following code is adapted from screenread.sty
+%%
+\pagestyle{empty}
+\newlength\screenwidth
+\newlength\screentextwidth
+\newcommand\SetScreen[1]{%
+  % Argument #1 is the screen width.
+  % Set appropriate layout parameters, with only a little white space
+  %   around the text.
+  % Note that although pagewidth is set to screenwidth in this macro,
+  %   this need not always be the case.
+  \setlength\screenwidth{#1}%
+  \setlength\screentextwidth{#1}%
+  \addtolength\screentextwidth{-1cm}%
+  \newgeometry{layoutwidth=\screenwidth,
+            textwidth=\screentextwidth,
+            layoutheight=500cm,
+            textheight=500cm,
+            top=0.5cm,
+            hcentering=true
+  }%
+}
+
+%%
+%% The following code is adapted from screenread.sty
+%%
+\AddToHook{shipout/before}[SpecialPage]{%
+    \pdfpagewidth=\screenwidth  
+    \pdfpageheight=\pagetotal
+    \advance\pdfpageheight by 2in
+    \advance\pdfpageheight by \topmargin
+    \advance\pdfpageheight by \textheight % This and next allow for footnotes
+    \advance\pdfpageheight by -\pagegoal
+}%
+
+\SetScreen{25cm}
+
+\hypersetup{
+    pdflang=en-UK,
+    pdftitle={CD705: Lecture Week 5.2},
+    pdfauthor={Alexey Chernov}
+}
+
+\title{{\normalsize CD705: Statistical Data Analysis with R}\\[1ex]
+ Lecture 5.2: Data (Pre-)Processing
+}
+
+
+
+\author{Alexey Chernov\\
+  \texttt{A.Chernov@brighton.ac.uk}
+}
+
+\date{4 November 2026}
+
+\newcommand{\alert}[1]{\textcolor{red}{#1}}
+
+\begin{document}
+
+\maketitle
+
+\newpage
+
+<<set-options, echo=FALSE, cache=FALSE>>=
+options(width = 100)
+knitr::opts_chunk$set(fig.width=8.5,fig.height=5,fig.align='center')
+@
+
+<<titanic-setup, echo=FALSE>>=
+titanic <- read.csv("titanic2208.csv",fileEncoding="latin1")
+titanic$Title <- factor(titanic$Title)
+titanic$Sex <- factor(titanic$Sex,levels=c("female","male"),labels=c("Female","Male"))
+titanic$Joined <- factor(titanic$Joined,
+                         levels=c("Belfast","Southampton","Cherbourg","Queenstown"),
+                         ordered=TRUE)
+titanic$Joined[is.na(titanic$Joined)]<-"Queenstown"
+titanic$Age.Whole.Years <- as.integer(titanic$Age)
+
+@  
+
+
+\subsubsection*{What We Do with Data}
+
+  \begin{itemize}
+    \item Manipulation
+      \begin{itemize}
+        \item filter (select a subpopulation)
+        \item transform (with one or more variables)
+        \item aggregate / summarise
+        \item re-order
+        \item merge
+      \end{itemize} 
+    \item Visualisation
+    \item Modelling (finding patterns), including statistical modelling
+  \end{itemize}
+  
+  \begin{center} 
+    \includegraphics[width=0.9\textwidth,alt={A jocular image on summaries}]{SumYearFeetPopulation.jpg} 
+  \end{center} 
+
+\newpage  
+\subsubsection*{Contingency Tables}
+
+Contingency tables is a powerful and versatile tool for summarising 
+the relationship between several categorical variables.
+<<titanic-sex-survived-class>>=
+with(titanic,
+     table(Sex,Survived)
+     )
+with(titanic,
+     table(Sex,Class)
+     )
+with(titanic,
+     table(Sex,Passengers = Class %in% c("1st Class","2nd Class","3rd Class"))
+     )
+with(titanic,
+     table(Sex,Survived,Class)
+     )
+@
+
+Proportion tables help replace absolute frequencies by relative ones:
+<<titanic-sex-survived-proportions>>=
+with(titanic,
+     table(Sex,Survived)
+     )
+with(titanic,
+     proportions(table(Sex,Survived))
+     )
+with(titanic,
+     proportions(table(Sex,Survived),margin=1)
+     )
+with(titanic,
+     proportions(table(Sex,Survived),margin=2)
+     )
+@
+
+Advanced use of tables:
+<<titanic-repeated-names>>=
+length(unique(titanic$Name))
+repeated.names <- with(titanic,
+                       names(table(Name)[table(Name)>1])
+                       )
+rep.titanic <- titanic[titanic$Name %in% repeated.names,]
+with(rep.titanic,
+     rep.titanic[order(Name,Age.Whole.Years,Joined),
+                 c("Name","Class","Age.Whole.Years","Joined","Survived")]
+)
+@
+
+
+\newpage  
+\subsubsection*{Data Shapes}  
+
+    \begin{center}
+     \begin{tabular}[b]{l|c|c|c|}
+        & Algebra & English & History \\
+      \hline
+       Jane & 40 & 57 & 61 \\
+      \hline 
+       John & 53 & 73 & 39 \\
+      \hline 
+     \end{tabular}
+     %
+     \qquad
+     %
+     \begin{tabular}[b]{l|c|c|}
+        & Jane & John \\
+      \hline
+       Algebra & 40 & 53 \\
+      \hline 
+       English & 57 & 73 \\
+      \hline
+       History & 61 & 39 \\
+      \hline 
+     \end{tabular}
+     
+     \bigskip
+     
+     \begin{tabular}[t]{l|l|c}
+       Name & Subject & Mark\\
+      \hline
+       Jane & Algebra & 40\\
+       Jane & English & 57 \\
+       Jane & History & 61 \\
+       John & Algebra & 53\\
+       John & English & 73 \\
+       John & History & 39 \\
+     \end{tabular}
+   \end{center}
+
+The two tables at the top are data in the so called ``wide'' format. 
+The bottom table is the data in a ``long'' format. 
+The latter is often necessary for regression-based statistical methods such as ANOVA but
+also useful for data re-shaping.
+
+<<create-Jane-John>>=
+df1 <- data.frame(Subject=c("Algebra","English","History"),
+                  Jane=c(40,57,61),
+                  John=c(53,73,39),
+                  stringsAsFactors=TRUE
+                  )
+df1
+@
+
+<<tidy-Jane-John>>=
+library(reshape2)
+df2 <- melt(df1,id.vars=c("Subject"),
+            measure.vars=c("Jane","John"),
+            variable.name="Name",
+            value.name="Mark")
+df2
+df2 <- df2[,c("Name","Subject","Mark")]
+df2
+@
+
+<<back-Jane-John>>=
+df1a <- dcast(df2,Subject~Name,value.var="Mark")
+df1a
+@
+
+<<another-Jane-John>>=
+df3 <- dcast(df2,Name~Subject,value.var="Mark")
+df3
+@
+
+Read \textit{Tidy Data} by Hadley Wickham!
+
+\subsubsection*{Experimental Data}
+
+In experiments, we measure a response in some subjects to a range of conditions  
+
+    \begin{center}
+     \begin{tabular}[t]{c|c|c}
+       \multicolumn{3}{c}{Wide format}\\[1ex]
+       Subject & Condition A & Condition B \\
+      \hline
+       1 & \(0.3007\) & \(0.9286\) \\
+       2 & \(-1.0123\) & \(-0.8614\) \\
+       3 & \(0.5813\) & \(0.7814\) \\
+     \end{tabular}
+     %
+     \qquad
+     %
+     \begin{tabular}[t]{c|c|c}
+       \multicolumn{3}{c}{Long format}\\[1ex]
+       Subject & Condition & Response\\
+      \hline
+       1 & A & \(0.3007\)\\
+       1 & B & \(0.9286\) \\
+       2 & A & \(-1.0123\) \\
+       2 & B & \(-0.8614\) \\
+       3 & A & \(0.5813\) \\ 
+       3 & B & \(0.7814\)\\
+     \end{tabular}
+   \end{center}
+
+ We look for a rule: \(\text{Response} \sim \text{Condition(s)}\)  
+
+\subsubsection*{Splits and Merges}
+<<df3-split>>=
+(df.girls <- df3[df3$Name=="Jane",])
+(df.boys <- df3[df3$Name=="John",])
+rownames(df.boys)<-NULL
+df.boys
+@
+
+<<df3-merge-back>>=
+rbind(df.girls,df.boys)
+@
+
+<<df1-split>>=
+(df.girls.vars <- df1[,!(names(df1) %in% c("John"))])
+(df.boys.vars <- df1[,-2])
+@
+
+<<df1-merge-back>>=
+merge(df.girls.vars,df.boys.vars)
+@
+
+\subsubsection*{Missing Values and Outliers}
+
+An important part of pre-processing is dealing with missing values and 
+outliers (unusual observations).
+Outliers may be more dangerous as they are not normally marked as such.
+Missing values may also have unusual and non-obvious encodings.
+
+Both missing values and outliers may be systematic or random. 
+The stratedy for dealing with them must depend on their origin.
+
+\bigskip
+
+Strategies to deal with missing values (and outliers):
+\begin{itemize}
+  \item case-by-case (for each operation separately);
+  \item remove an observation;
+  \item remove a variable;
+  \item imputation:
+    \begin{itemize}
+      \item fundamental (collecting the data element again);
+      \item technical: by average, by function of other variable(s), 
+        by a stochastic procedure. 
+    \end{itemize}
+\end{itemize}
+
+\newpage
+\subsection*{Data Modelling}
+
+Data Modelling includes finding any patterns or regularities in data.
+Typically, it assumes comparing the data with some theoretical expectation.
+The latter depends on the business context and changes while the data are analysed. 
+
+Any data set can be considered as a selection from a large population.
+Two kinds of selection methods:
+\begin{itemize}
+  \item observational (sampling-based);
+  \item experimental.
+\end{itemize}
+The involved randomness may be natural or imposed by us.
+
+\subsubsection*{Hypothesis Testing}
+
+Is the number of men and women approximately equal in the 1st Class?
+<<titanic-compare-1st-class-sex>>=
+attach(titanic)
+(Sexes <- table(Sex[Class=="1st Class"]))
+binom.test(Sexes[1],sum(Sexes))
+pbinom(min(Sexes),sum(Sexes),0.5)*2
+detach(titanic)
+@
+
+Are 3rd class and 2nd Class passengers of the same median age?
+<<titanic-compare-age-by-class>>=
+attach(titanic)
+plot(density(Age.Whole.Years[Class=="3rd Class"],na.rm=TRUE),col="red")
+lines(density(Age.Whole.Years[Class=="2nd Class"],na.rm=TRUE),col="blue")
+wilcox.test(Age.Whole.Years[Class=="3rd Class"],Age.Whole.Years[Class=="2nd Class"])
+detach(titanic)
+@
+
+Did the chance of survival depend on sex?
+<<titanic-compare-sex-survival>>=
+attach(titanic)
+(SS <- table(Sex,Survived))
+fisher.test(SS)
+detach(titanic)
+@
+
+\newpage
+\subsubsection*{Linear Regression}
+
+Simple regression (trend line):
+<<iris-Petal.Length-Petal.Width>>=
+plot(Petal.Length~Petal.Width,data=iris)
+PLW <- lm(Petal.Length~Petal.Width,data=iris)
+PLW
+summary(PLW)
+abline(PLW, col="blue",lwd=3)
+@
+
+<<iris-Sepal.Length-Sepal.Width>>=
+plot(Sepal.Length~Sepal.Width,data=iris)
+SLW <- lm(Sepal.Length~Sepal.Width,data=iris)
+summary(SLW)
+abline(SLW, col="blue",lwd=3)
+@
+
+<<iris-Sepal.Length>>=
+SLall <- lm(Sepal.Length~.-Species,data=iris)
+summary(SLall)
+@
+
+\newpage
+\subsubsection*{Decision Tree Classification}
+
+<<iris-class>>=
+library(rpart)
+library(rattle)
+SpeciesClass <- rpart(Species~.,data=iris)
+SpeciesClass
+fancyRpartPlot(SpeciesClass,sub="",type=4)
+summary(SpeciesClass)
+@
+
+<<titanic-class>>=
+titanic$Class <- factor(titanic$Class)
+titanic$Survived <- factor(titanic$Survived)
+titanic.pass <- titanic[titanic$Class %in% c("1st Class","2nd Class","3rd Class"),]
+SurvivalModel <- rpart(Survived~Sex+Class+Age.Whole.Years,data=titanic.pass)
+SurvivalModel
+fancyRpartPlot(SurvivalModel,sub="",type=4)
+summary(SurvivalModel)
+@
+\end{document}

@@ -1,0 +1,211 @@
+---
+title: "| CD705 Statistical Data Analysis with R \n|\n| 
+  Week 5.1: R Lecture Companion\n|\n|\n"
+author: "Alexey Chernov"
+date: "4 November 2026"
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+#options(width = 120)
+knitr::opts_chunk$set(fig.width=10,fig.align='center')
+```  
+
+# Approximations for Distributions
+
+```{r initialise}
+set.seed(16122020)
+library(ggplot2)
+n.simulations <- 1e6
+```      
+
+## Hypergeometric and Binomial
+
+```{r hyp-binom, fig.height=5,warning=FALSE}
+hyper_binom_histogram <- function(n,N,M){
+  data1 <- data.frame(x=rhyper(n.simulations,M,N-M,n),name="Hypergeometric")
+  data2 <- data.frame(x=rbinom(n.simulations,n,M/N),name="Binomial")
+  ggplot(data=rbind(data1,data2)) + aes(x=x,group=name,colour=name) + 
+    geom_histogram(binwidth=1,center=0,fill="white",position="identity",linewidth=0.1) + 
+    geom_freqpoly(aes(linetype=name),binwidth=1,center=0,position="identity") + 
+    ggtitle(paste0("Hypergeometric vs Binomial with ",n,
+                   " trials in population of size ",N," having ",M," successes")) + 
+    theme(legend.title=element_blank(),legend.justification=c(1,1),
+          legend.position=c(0.9,0.9),plot.margin=unit(c(0,0,1,0),"cm")) + 
+    xlab("Number of successes") + xlim(-1,n+1)
+}
+for(N in c(10,20,50,100,200)){
+  print(hyper_binom_histogram(10,N,0.5*N))
+}
+```    
+
+## Poisson and Binomial
+
+```{r pois-binom, fig.height=5,warning=FALSE}
+poisson_binom_histogram <- function(lambda,n){
+  data1 <- data.frame(x=rpois(n.simulations,lambda),name="Poisson")
+  data2 <- data.frame(x=rbinom(n.simulations,n,lambda/n),name="Binomial")
+  ggplot(data=rbind(data1,data2)) + aes(x=x,group=name,colour=name) + 
+    geom_histogram(binwidth=1,center=0,fill="white",position="identity",linewidth=0.1) + 
+    geom_freqpoly(aes(linetype=name),binwidth=1,center=0,position="identity") + 
+    ggtitle(paste0("Poisson with ",lambda," expected successes vs Binomial with ",n,
+                   " trials and probability of success ",lambda/n)) + 
+    theme(legend.title=element_blank(),legend.justification=c(1,1), 
+          legend.position=c(0.9,0.9),plot.margin=unit(c(0,0,1,0),"cm")) + 
+    xlab("Number of successes") + xlim(-1,n+5)
+}
+for(n in c(10,20,50,100,200)){
+  print(poisson_binom_histogram(10,n))
+}
+```    
+
+## Binomial and Normal
+
+```{r binom-norm, fig.height=5,warning=FALSE}
+cols <- c("FIRST"="red","SECOND"="black")
+binom_normal_histogram <- function(n,p){
+  data <- data.frame(x=rbinom(n.simulations,n,p))
+  ggplot(data) + aes(x=x) + 
+    geom_histogram(binwidth=1,center=0,fill="white",colour="blue",
+                   linetype="dashed",linewidth=0.1) + 
+    geom_freqpoly(binwidth=1,center=0,aes(colour="FIRST"),linetype="dotted",linewidth=1) + 
+    stat_function(fun=function(x) n.simulations*dnorm(x,mean=n*p,sd=sqrt(n*p*(1-p))),
+                  aes(color="SECOND"),linetype="solid",linewidth=0.5) + 
+    ggtitle(paste0("Binomial Distribution with ",n,
+                   " trials and probability of success ",p)) + 
+    scale_colour_manual(values=cols,labels=c("Binomial","Normal")) + 
+    theme(legend.title=element_blank(),legend.justification=c(1,1), 
+          legend.position=c(0.9,0.9),plot.margin=unit(c(0,0,1,0),"cm")) + 
+    xlab("Number of successes") + xlim(-1,n+1)
+}
+for(n in c(5,10,20,50,100,200)){
+  print(binom_normal_histogram(n,0.5))
+}
+```    
+
+Remark: The DataCamp course (for example, see  https://campus.datacamp.com/courses/foundations-of-probability-in-r/related-distributions?ex=3) uses the following code to compare two distributions:
+```{r datacamp-compare}
+compare_histograms <- function(variable1, variable2) {
+  x <- data.frame(value = variable1, variable = "Variable 1")
+  y <- data.frame(value = variable2, variable = "Variable 2")
+  ggplot(rbind(x, y), aes(value)) +
+    geom_histogram() +
+    facet_wrap(~ variable, nrow = 2)
+}
+```     
+
+## Normal Distribution
+
+### Exponential and Linear function
+The following plot illustrates the difference in bounds given by the law of large numbers 
+and by the normal distribution tails.
+```{r lin-exp,fig.height=5}
+curve(exp,0,3,col="red",lty=1,xlim=c(0,20),ylab="",asp=1,las=1)
+text(log(15),15,"y=e^x",col="red",pos=4,cex=2)
+curve(x^1,col="black",lty=2,add=TRUE)
+text(15,15,"y=x",pos=4,cex=2,offset=1)
+```     
+
+### The Central Limit Theorem
+
+Let's consider the distribution of the sample mean 
+for different sample sizes and different distributions of the original random variable.
+The red line shows the density of the respective normal approximation.
+
+```{r show-distr-setup}
+show.mean.distribution <- function(n,smpl.gen,orig=FALSE,n.bins=200,h.center=0){
+  random.sample <- smpl.gen(n,n.simulations)
+  if (is.function(n.bins))
+    n.bins <- n.bins(random.sample) 
+  if(orig){
+    print(
+      ggplot(data.frame(x=random.sample)) + aes(x=x) + 
+        geom_histogram(aes(y=stat(density)),bins=n.bins,center=h.center,
+                       fill="black",colour="white",linewidth=0.1) + 
+        ggtitle("Distribution of the Original Random Variable")
+    )  
+  }
+  distr.mean <- mean(random.sample)
+  distr.sd <- sd(random.sample)
+  means <- apply(matrix(random.sample,ncol=n),1,mean)
+  print(
+    ggplot(data.frame(x=means)) + aes(x=x) +
+      geom_histogram(aes(y=stat(density)),bins=n.bins,center=h.center,
+                     fill="black",colour="white",linewidth=0.1) +
+      stat_function(fun=function(x)dnorm(x,mean=distr.mean,sd=distr.sd/sqrt(n)),
+                    color="red",linetype="solid",linewidth=0.5) + 
+      ggtitle(paste0("Distribution of the Sample Mean, sample size is ",n)) 
+  )
+}
+```    
+
+A uniform distribution:
+```{r conv-unif, fig.align='center', fig.width=10}
+unif.sample <- function(n,reps){
+  runif(n*reps)
+}
+show.mean.distribution(2,unif.sample,TRUE)
+for(n in c(5,15,30)){
+  show.mean.distribution(n,unif.sample)
+}
+```    
+
+
+An exponential distribution:
+```{r conv-exp, fig.align='center', fig.width=10}
+exp.sample <- function(n,reps){
+  rexp(n*reps)
+}
+show.mean.distribution(2,exp.sample,TRUE)
+for(n in c(5,15,30,50,100,200)){
+  show.mean.distribution(n,exp.sample)
+}
+```    
+
+
+A mixture of two uniform distributions:
+```{r conv-2unif, fig.align='center', fig.width=10}
+unifm.sample <- function(n,reps){
+  runif(n*reps) + sample(c(0,2),n*n.simulations,replace=TRUE)
+}
+show.mean.distribution(2,unifm.sample,TRUE)
+for(n in c(5,15,30)){
+  show.mean.distribution(n,unifm.sample)
+}
+```    
+
+
+A mixture of ten uniform distributions:
+```{r conv-10unif, fig.align='center', fig.width=10}
+unifm10.sample <- function(n,reps){
+  runif(n*reps) + sample(2*(0:10),n*n.simulations,replace=TRUE)
+}
+show.mean.distribution(2,unifm10.sample,TRUE)
+for(n in c(5,15,30)){
+  show.mean.distribution(n,unifm10.sample)
+}
+```    
+
+
+A binomial distribution:
+```{r conv-binom, fig.align='center', fig.width=10}
+binom.size <- 30
+binom.sample <- function(n,reps){
+  rbinom(n*reps,size=binom.size,prob=0.1)
+}
+```     
+
+A wrong visualisation:
+```{r conv-binom-wrong-visual, fig.align='center', fig.width=10}
+show.mean.distribution(2,binom.sample,TRUE)
+for(n in c(5,15,30,50,100)){
+  show.mean.distribution(n,binom.sample)
+}
+```     
+
+A better visualisation:
+```{r conv-binom-right-visual, fig.align='center', fig.width=10}
+show.mean.distribution(2,binom.sample,TRUE,n.bins=function(smpl){max(smpl)+1},h.center=pi/10)
+for(n in c(5,15,30,50,100,200)){
+  show.mean.distribution(n,binom.sample,n.bins=function(smpl){max(smpl)+round(n^(2/3))},h.center=pi/10)
+}
+```    

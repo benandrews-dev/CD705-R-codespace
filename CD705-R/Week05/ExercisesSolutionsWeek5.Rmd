@@ -1,0 +1,581 @@
+---
+title: "CD705, Week 5: Solutions / Answers to Exercises"
+author: "Alexey Chernov"
+date: "4 November 2026"
+---
+
+
+```{r}
+set.seed(1122021) 
+```  
+
+# Exercise 1
+The number of patients with cancer among \(150\) patients has a binomial distribution,
+\(X\sim B(150,0.007)\). This distribution can be approximated by a Poisson distribution,
+\(Y\sim Pois(150\times 0.007)\).
+
+`(i)` 
+```{r}
+dbinom(0,150,0.007)
+dpois(0,150*0.007)
+```   
+
+`(ii)` 
+\(\Pr[X>2] = 1-\Pr[X\le2]\) and the same for \(Y\), hence
+```{r}
+1-pbinom(2,150,0.007)
+1-ppois(2,150*0.007)
+```   
+
+# Exercise 2
+The number of pages with typos has a binomial distribution,
+\(X\sim B(32625,0.0005)\). 
+\(\Pr[X\ge 14] = 1-\Pr[X < 14] = 1-\Pr[X\le13] =\)
+```{r}
+1-pbinom(13,32625,0.0005)
+```  
+Or we could use the Poisson approximation, which is very precise in this case:
+```{r}
+1-ppois(13,32625*0.0005)
+```   
+
+# Exercises 3 
+Let \(X\) be the ozone concentration (ozone level), \(X\sim{N}(12,3^2)\).
+
+## a)
+`(i)` \(\Pr[X<10]=\Pr[X\le 10]\approx\)
+```{r}
+pnorm(10,12,3)
+```   
+
+`(ii)` \(\Pr[X<14]\approx\)
+```{r}
+pnorm(14,12,3)
+```   
+
+`(iii)` \(\Pr[X<16]\approx\)
+```{r}
+pnorm(16,12,3)
+```   
+
+`(iv)` \(\Pr[X>10]=\Pr[X\ge 10]\approx\)
+```{r}
+1-pnorm(10,12,3)
+```   
+Note that \(10\) and \(14\) are symmetric around the mean, hence \(\Pr[X>10]=\Pr[X<14]\).
+
+`(v)` \(\Pr[X>9]\approx\)
+```{r}
+1-pnorm(9,12,3)
+```   
+
+`(vi)` \(\Pr[9<X<11]=\Pr[X<11]-\Pr[X\le9]=\Pr[X<11]-\Pr[X<9]\approx\)
+```{r}
+pnorm(11,12,3)-pnorm(9,12,3)
+```   
+
+`(vii)` \(\Pr[11<X<14]\approx\)
+```{r}
+pnorm(14,12,3)-pnorm(11,12,3)
+```   
+
+## b)
+The first quartile is \(x^*_{0.25}\) such that \(\Pr[X \le x^*_{0.25}] = 0.25\), hence \(x^*_{0.25}\approx\)
+```{r}
+qnorm(0.25,12,3)
+```   
+The \(95^\text{th}\) percentile is \(x^*_{0.95}\) such that \(\Pr[X \le x^*_{0.95}] = 0.95\), hence \(x^*_{0.95}\approx\)
+```{r}
+qnorm(0.95,12,3)
+```   
+
+# Exercise 4
+Let $X$ be the life span of a shrub. $X\sim{N}(6,2^2)$
+
+## a)
+`(i)` $\Pr[X\le8] =$
+```{r}
+pnorm(8,6,2)
+```
+`(ii)` $\Pr[X>8] =$
+```{r}
+pnorm(8,6,2,FALSE)
+```
+`(iii)` $\Pr[6 \le X \le 8] = \Pr[X\le8] - \Pr[X\le6] =$
+```{r}
+pnorm(8,6,2)-pnorm(6,6,2)
+```
+`(iv)` $\Pr[X\le0] =$
+```{r}
+pnorm(0,6,2)
+```
+This probability is small, but non-zero, which does not make sense for real shrubs. 
+The reason is that modelling bounded values as the life span by normal distribution is possible only near their average value.
+
+## b)
+The life span $x_{>,0.25}$ exceeded by $25$% of the population is the value such that $\Pr[X \ge x_{>,0.25}]=0.25$:
+```{r}
+qnorm(0.25,6,2,FALSE)
+```
+That is, $25$% of the shrubs live $7.3$ years or more.
+
+The life span $x_{>,0.75}$ exceeded by $75$% of the population is the value such that $\Pr[X \ge x_{>,0.75}]=0.75$:
+```{r}
+qnorm(0.75,6,2,FALSE)
+```
+
+# Exercise 5
+$X\sim{N}(450,100^2)$ is the score of one randomly selected person.  
+
+## a)
+$\Pr[400 < X < 500] = \Pr[X<500] - \Pr[X<400] =$
+```{r}
+pnorm(500,450,100) - pnorm(400,450,100)
+```  
+## b)
+$\Pr[X>480] =$
+```{r}
+pnorm(480,450,100,lower.tail=FALSE)
+```  
+## c)  
+We need to find $x^*$ such that $\Pr[X>x^*]\le0.1$
+```{r}
+qnorm(0.1,450,100,lower.tail=FALSE)
+```  
+To get an integer score, we must round up to $579$ (note that a normal distribution cannot be a fully adequate model for integer scores).   
+
+## d) 
+Let the individual scores be \(X_i\sim{N}(450,100^2)\), \(i=1,\ldots,20\).
+This is a random group, so the scores are independent.
+Their average score is \(\bar X = \frac{1}{20}\sum_{i=1}^{20} X_i\),
+and the distribution of it is normal.
+
+`(i)` 
+\(\mathbf{E} \bar X = 450\) and \(\mathrm{Var}(\bar X)=100^2/20=500\),
+hence the standard deviation of the average is \(\sqrt{500}\approx22.36\).
+
+`(ii)`
+\(\bar X\sim{N}(450,100^2/20)\) and 
+\(\Pr[\bar X\ge 480]=1-\Pr[\bar X\le 480]\approx\)
+```{r}
+1-pnorm(480,450,sqrt(500))
+```   
+
+`(iii)`
+\(\Pr[\text{for all } i\:X_i<480] = \Pr[X_1\le 480]\cdot\Pr[X_2\le 480]\cdots\Pr[X_{20}\le 480]
+       = {\bigl(\Pr[X_i\le 480]\bigr)^{20}}\approx\)
+```{r}
+format((pnorm(480,450,100))^20,scientific=FALSE)
+```   
+
+`(iv)`
+\(\Pr[\text{there is } i\text{ such that }X_i<480] = 1 - \Pr[\text{for all } i\:X_i\ge 480]\approx\)
+```{r}
+print(1-(1-pnorm(480,450,100))^20,digits=10)
+```   
+
+
+# Exercise 6
+Let \(X\) be the weight of a bag, \(X\sim{N}(25,0.5^2)\).
+
+## a)
+`(i)` \(\Pr[X>25]=0.5\)
+
+`(ii)` \(\Pr[24<X<26]\approx\)
+```{r}
+pnorm(26,25,0.5)-pnorm(24,25,0.5)
+```    
+
+## b)
+The weights of each bag are \(X_i\sim{N}(25,0.5^2)\), \(i=1,\ldots,100\), 
+and as they are independent,
+\(S=\sum_{i=1}^{100} X_i\sim{N}(25\cdot100,0.5^2\cdot100)\).
+
+\(\Pr[2400<S<2600] = \Pr[S \le 2600] - \Pr[S \le 2400] \approx\)
+```{r}
+pnorm(2600,2500,5)-pnorm(2400,2500,5)
+```   
+
+
+# Exercise 7
+Let the mean filling weight be $\mu$,
+then the weight of a randomly chosen container is $X\sim{N}(\mu,0.6^2)$ and $(X-\mu)/0.6\sim{N}(0,1)$.   
+We know that $\Pr[X < 18]=0.02$, hence $\Pr[(X-\mu)/0.6 < (18-\mu)/0.6]=0.02$
+and thus $(18-\mu)/0.6 = z^*_{0.02}$,
+where $z^*_{0.02}$ is a value such that $\Pr[Z \le z^*_{0.02}]=0.02$.
+Finally, $\mu = 18 - 0.6\cdot z^*_{0.02} =$
+```{r}
+18-0.6*qnorm(0.02)
+```  
+
+# Exercise 8
+
+From the symmetry of the probability density function of the normal distribution, 
+we get that the mean \(\mu = (15.41 + 15.15)/2 = 15.28\) 
+(here we use that both tails, below \(15.15\) and above \(15.41\), have the same probability of \(14\)\%).
+  
+If \(X\) is the mass of a randomly chosen bird, then \(\frac{X-15.28}{\sigma}\sim{N}(0,1)\),
+where \(\sigma\) is the standard deviation of the mass.
+Thus, \((15.15-15.28)/\sigma = z^*_{0.14}\approx\) 
+```{r}
+qnorm(0.14)
+```   
+and \(\sigma = (15.15-15.28)/z^*_{0.14} \approx\)
+```{r}
+(15.15-15.28)/qnorm(0.14)
+```   
+
+
+# Exercise 9   
+
+Let \(X\) be the diameter of a randomly chosen apple, \(X\sim{N}(\mu,\sigma^2)\).
+
+From the stated properties, we get two equations, \((85-\mu)/\sigma = z^*_{0.95}\) and 
+\((80-\mu)/\sigma = z^*_{0.8}\).
+
+Solving these simultaneous equations, we get
+\(\mu = (80\cdot z^*_{0.95} - 85\cdot z^*_{0.8})/(z^*_{0.95} - z^*_{0.8}) \approx\)
+```{r}
+(80*qnorm(0.95) - 85*qnorm(0.8))/(qnorm(0.95) - qnorm(0.8))
+```   
+and \(\sigma = (85-80)/(z^*_{0.95}-z^*_{0.8}) \approx\)
+```{r}
+(85 - 80)/(qnorm(0.95) - qnorm(0.8))
+```   
+
+
+# Exercise 10
+Let \(X\) be the income of a randomly chosen UK taxpayer. \(\mathbf{E} X=27\,300\) pounds. 
+Note that we have no reasons to assume that \(X\) has a normal distribution.
+
+## a)
+By the Law of Large Numbers with \(n=1\) and \(\varepsilon=6\,300\), we have
+\(\Pr[|X-27\,300|\ge6\,300]\le\frac{\mathrm{Var}(X)}{(6\,300)^2}\).
+As \(\Pr[|X-27\,300|\ge6\,300] = \Pr[X\ge 33\,600] + \Pr[X\le 21\,000]= 0.285 + 0.5 = 0.785\),
+we get \(\sqrt{\mathrm{Var}(X)} \ge 6\,300\sqrt{0.785} \approx 5\,581.81\)
+
+## b)
+Similarly to the previous item,
+\(\Pr[|X-27\,300|\ge 122\,700]\le\frac{\mathrm{Var}(X)}{(122\,700)^2}\).
+
+As \(\Pr[|X-27\,300|\ge 122\,700] = \Pr[X\ge 150\,000] + \Pr[X\le -95\,400]=0.01\) (negative incomes are impossible),
+we get \(\sqrt{\mathrm{Var}(X)} \ge 122\,700\sqrt{0.01} = 12\,270\).
+
+# Exercise 11
+Let $\mu$ be the mean and $\sigma$ the standard deviation of the distribution.  
+Let $\bar X_n$ be the sample mean of a random sample of size $n$.
+
+## a) 
+$\Pr[|\bar X_{100}-\mu|<\sigma]=1-\Pr[|\bar X_{100}-\mu|\ge\sigma]$.
+By the law of large numbers, $\Pr[|\bar X_{100}-\mu|\ge\sigma]\le\frac{\sigma^2}{100\sigma^2}=0.01$, hence
+$\Pr[|\bar X_{100}-\mu|<\sigma]\ge0.99$.
+
+## b)
+Let $n$ be the required sample size. 
+We need to guarantee that $\Pr[|\bar X_n-\mu|<2\sigma]\ge0.99$, 
+or equivalently, 
+guarantee that $\Pr[|\bar X_n-\mu|\ge2\sigma] = 1-\Pr[|\bar X_n-\mu|<2\sigma] \le 1- 0.99 = 0.01$.
+By the law of large numbers, 
+$\Pr[|\bar X_n-\mu|\ge 2\sigma]\le\frac{\sigma^2}{n(2\sigma)^2}=\frac{1}{4n}$, hence
+it is sufficient if $\frac{1}{4n} \le 0.01$, or $n\ge 25$.
+
+# Exercise 12 
+
+Let \(X\) be the number of Heads in the \(1000\) tossings. 
+Let \(Y_i\) be the result of the \(i\)-th tossing, \(Y_i=1\) if a Head occured and \(Y_i=0\) otherwise,
+thus \(X = \sum_{i=1}^{1000} Y_i\). 
+  
+As the number of tossings is large (\(1000\)), we can use the Central Limit Theorem,
+and \(\bar Y = \frac{1}{1000}\sum_{i=1}^{1000} Y_i\) has approximately normal distribution
+with mean \(0.4\) and variance \(\frac{0.4(1-0.4)}{1000}\) (using the mean and variance for a binomial distribution and properties of mean and variance of a sample mean); therefore, 
+\(X = 1000 \bar Y\sim {N}(400,240)\).
+  
+We need to find the smallest \(k\) such that \(\Pr[|X - 400|\ge k] \le 0.05\).
+\(\Pr[|X - 400|\ge k] = 2\Pr[X-400 \le -k]\), thus \(-k\) is the \(0.025\)-quantile of \({N}(0,240)\),
+and \(k=\)
+```{r}
+-qnorm(0.025,mean=0,sd=sqrt(240))
+```    
+
+# Exercise 13
+
+Let \(X_1,\ldots,X_n\) be the random sample, \(\mathbf{E} X_i=\mu\), \(\mathrm{Var}(X_i)=3^2\).
+Let \(\bar X_n = \frac{1}{n}\sum_{i=1}^n X_i\). 
+
+First assume that \(n\) is large enough to use the Central Limit Theorem
+(we will check whether the assumption is correct when we have obtained the value of \(n\));
+then \(\bar X_n \sim {N}\left(\mu,\frac{3^2}{n}\right)\), 
+hence
+\({\Pr[|\bar X_n - \mu|<0.3]} 
+    = 
+    {\Pr\left[\left|\frac{\bar X_n - \mu}{3/\sqrt{n}}\right|<\frac{0.3}{3/\sqrt{n}}\right]}
+    =
+    {1-2\Pr\left[\frac{\bar X_n - \mu}{3/\sqrt{n}} < -\frac{0.3}{3/\sqrt{n}}\right]}
+\).
+
+As \(1-2\alpha \ge 0.95\) implies that \(\alpha \le 0.025\), we get
+\(\quad -\frac{0.3}{3/\sqrt{n}} < z^*_{0.025}\), where \(z^*_{0.025}\) is
+the \(0.025\)-quantile of the standard normal distribution.
+Therefore, \(n > \left(\frac{-3z^*_{0.025}}{0.3}\right)^2 \approx\)
+```{r}
+(-3*qnorm(0.025)/0.3)^2
+```    
+  
+The smallest value of \(n\) is \(385\), and this value is large enough to justify the use of the CLT above.
+
+# Exercise 14
+Let \(Y_i\) be the result of the \(i\)-th tossing
+and the proportion of heads is \(\bar Y_n = \frac{1}{n}\sum_{i=1}^n Y_i\).
+  
+First assume that \(n\) is large enough to apply the Central Limit Theorem.
+Then \(\bar Y_n \sim {N}\left(0.4,\frac{0.4\cdot 0.6}{n}\right)\) 
+and \(\frac{(\bar Y_n - 0.4)\sqrt{n}}{\sqrt{0.24}} \sim {N}(0,1)\).
+  
+### (i)
+
+ \(0.95\le \Pr[0.3\le\bar Y_n\le0.5] 
+  = \Pr\left[\frac{-0.1\sqrt{n}}{\sqrt{0.24}} 
+           \le \frac{(\bar Y_n - 0.4)\sqrt{n}}{\sqrt{0.24}} 
+          \le \frac{0.1\sqrt{n}}{\sqrt{0.24}}\right]
+  = 1-2\Pr\left[\frac{(\bar Y_n - 0.4)\sqrt{n}}{\sqrt{0.24}}\le\frac{-0.1\sqrt{n}}{\sqrt{0.24}}\right]\), 
+thus \(\frac{-0.1\sqrt{n}}{\sqrt{0.24}}\le z^*_{0.025}\) and
+\(n\ge\left(-10 z^*_{0.025}\sqrt{0.24}\right)^2 \approx\) 
+```{r}
+(-10*qnorm(0.025)*sqrt(0.24))^2
+```   
+The smallest value of \(n\) is \(93\), which is large enough for the CLT.
+
+### (ii)
+\(0.95\le \Pr[\bar Y_n\le0.5] 
+       = \Pr\left[\frac{(\bar Y_n - 0.4)\sqrt{n}}{\sqrt{0.24}}\le\frac{0.1\sqrt{n}}{\sqrt{0.24}}\right]\), 
+thus \(\frac{0.1\sqrt{n}}{\sqrt{0.24}}\ge z^*_{0.95}\)
+and \(n\ge\left(10 z^*_{0.95}\sqrt{0.24}\right)^2 \approx\)
+```{r}
+(10*qnorm(0.95)*sqrt(0.24))^2
+```   
+The smallest value of \(n\) is \(65\), which is probably large enough for the CLT.
+            
+### (iii)            
+\(0.95\le \Pr[\bar Y_n\ge0.2] 
+       = \Pr\left[\frac{(\bar Y_n - 0.4)\sqrt{n}}{\sqrt{0.24}}\ge\frac{-0.2\sqrt{n}}{\sqrt{0.24}}\right]\), 
+thus \(\frac{-0.2\sqrt{n}}{\sqrt{0.24}}\le z^*_{0.05}\)
+and \(n\ge\left(-5 z^*_{0.05}\sqrt{0.24}\right)^2 \approx\)
+```{r}
+(-5*qnorm(0.05)*sqrt(0.24))^2
+```   
+
+This value of \(n\) is not large enough for the CLT. Thus, the calculations above are not justified. 
+However, we can use the value \(n=17\) as an initial guess.
+            
+To calculate \(\Pr[\bar Y_n\ge0.2]\) exactly, not approximately, it is sufficient to note that
+\(n\bar Y_n\sim B(n,0.4)\) and \(\Pr[\bar Y_n\ge0.2] = \Pr[n\bar Y_n\ge0.2n] = 1 - \Pr[n\bar Y_n < 0.2n]\).
+```{r}
+check.prob <- function(N){
+  (1-pbinom(q=N %/% 5 + ifelse(N %% 5 == 0,-1,0), size=N, prob=0.4)) >= 0.95
+}
+print(first.good.N <- match(TRUE,sapply(1:20,check.prob)))
+```   
+The smallest value of \(n\) is \(10\). 
+
+This difference between \(10\) and \(17\) is mostly due to the fact that the binomial distribution 
+makes jumps at integer values:
+```{r}
+1-pbinom(0.2*17,17,0.4)
+1-pbinom(0.2*16,16,0.4)
+1-pbinom(0.2*11,11,0.4)
+1-pbinom(0.2*10-1,10,0.4)
+1-pbinom(0.2*9,9,0.4)
+```   
+
+# Exercise 15
+Similarly to previous exercises, we look for \(n\) such that
+\({\Pr\left[Z < \frac{0.13-0.1}{\sqrt{0.1(1-0.1)}/\sqrt{n}}\right]}\ge 0.99\), hence
+\(\frac{0.03}{0.3/\sqrt{n}} \ge z^*_{0.99}\) and 
+\(n \ge (10z^*_{0.99})^2 \approx\). 
+```{r}
+(10*qnorm(0.99))^2
+```    
+\(n=542\) 
+
+# Exercise 16
+## a)
+```{r}
+earnings <- c(-99750, -99500, -99250, -99000, -98750, 1250)
+probabilities <- c(.00183,.00186,.00189,.00191,.00193,NA)
+probabilities[is.na(probabilities)] <- 1-sum(probabilities,na.rm=TRUE)
+probabilities
+mean.earnings <- sum(earnings*probabilities)
+```   
+
+## b)
+
+The earnings \(X_1,\ldots,X_n\) from each of \(n\) young man have the same distribution as \(X\).
+
+However, people deaths are independent (quite often, the independence is additionally guaranteed by special clauses making insurance invalid in case of mass deaths), and the total earnings \(X_1+\cdots+X_n\) will have approximately normal distribution with mean \(n\mathbf{E} X\) and standard deviation \(\sqrt{n}\sqrt{\mathrm{Var}(X)}\).
+Thus, the standard deviation of the total earnings grows slower than the mean of the total earnings 
+(as a \(\sqrt{n}\) compared to \(n\)), 
+so for a sufficiently large \(n\) the total earnings will almost surely be close to their mean.
+
+## c)
+
+The probability of losses is \(\Pr[X_1+\cdots+X_n < 0]\), 
+so for each value of \(\alpha\) among \(0.01\), \(0.001\) and \(0.000001\)
+we need to find the smallest \(n\) such that \(\Pr[X_1+\cdots+X_n < 0] \le \alpha\).
+
+Assuming that \(n\) is large enough to use the CLT, 
+\(\Pr[X_1+\cdots+X_n < 0] 
+  = \Pr\left[\frac{X_1+\cdots+X_n - n\mathbf{E} X}{\sqrt{n}\sqrt{\mathrm{Var}(X)}} 
+                      < \frac{- n\mathbf{E} X}{\sqrt{n}\sqrt{\mathrm{Var}(X)}}
+                 \right]\).
+Thus, \(\frac{- n\mathbf{E} X}{\sqrt{n}\sqrt{\mathrm{Var}(X)}} \le z^*_{\alpha}\)
+and \(\sqrt{n} \ge \frac{-z^*_{\alpha}\sqrt{\mathrm{Var}(X)}}{\mathbf{E} X}\).
+The required values of \(n\) are
+```{r}
+var.earnings <- sum(earnings^2*probabilities) - mean.earnings^2
+alpha <- c(0.01,0.001,0.000001)
+ceiling((-qnorm(alpha)*sqrt(var.earnings)/mean.earnings)^2)
+```   
+All of them are more than enough for the CLT.
+
+# Exercise 17
+
+## a)
+The UK voting population is so large, so we can consider it infinite, hence \(X\sim B(n,p)\)
+(absolutely precisely, \(X\) has a hypergeometric distribution, but this precision is practically irrelevant).
+
+For a large \(n\), the distribution of \(X\) is approximately normal with mean \(np\) and standard deviation \(\sqrt{np(1-p)}\), while the distribution of \(\hat p = \frac{X}{n}\) is approximately normal with mean \(p\) 
+and standard deviation \(\sqrt{p(1-p)/n}\)
+
+## b)
+We assume that \(n\) is large, so \(\hat p\sim{N}\left(p,\frac{p(1-p)}{n}\right)\). 
+\(\Pr[|\hat p - p|\le 0.02] = 0.95\), thus \(\frac{0.02\sqrt{n}}{\sqrt{p(1-p)}} = z^*_{0.975}\) and \(n \ge \left(\frac{z^*_{0.975}}{0.02}\right)^2 p(1-p)\).
+       
+As the value of \(p\) is not known (we want to estimate it!), we need to select \(n\), which would work for any \(p\), that is, 
+\(n \ge \left(\frac{z^*_{0.975}}{0.02}\right)^2 \max\limits_p \{p(1-p)\}\).
+
+One can easily check using methods of calculus that \(\max\limits_p \{p(1-p)\}=0.25\).
+Alternatively, from the plot 
+```{r,fig.align='center'}
+curve(x*(1-x),0,1)
+```   
+and the ideas of symmetry we can conclude that the largest value of \(p(1-p)\) is achieved when \(p=0.5\),
+which gives \(\max\limits_p \{p(1-p)\}=0.25\).
+
+Therefore, \(n  \ge \left(\frac{z^*_{0.975}}{0.02}\right)^2 \cdot 0.25\approx\)
+```{r}
+(qnorm(0.975)/0.02)^2 * 0.25
+```   
+
+This is large enough for the CLT, so the smallest sample size that guarantees the margin of error of \(2\)\% with probability \(95\)\% is \(2401\). 
+
+
+
+# Exercise 18
+The sample size is $100$,  so the distribution of the mean can be considered approximately normal. The sample mean is $72$, and the estimated standard deviation $12$ is not obtained from this sample.
+```{r}
+z.conf.int<-function(sample.mean,sigma,n,level=0.95){ 
+  margin<-sigma*qnorm(1-(1-level)/2)/sqrt(n); 
+  c(sample.mean-margin,sample.mean+margin)
+}
+z.conf.int(72,12,100)
+```
+
+# Exercise 19
+We can calculate a $95$% confidence interval assuming that the standard deviation is $0.707$:
+```{r}
+water<-scan("water.csv",sep=",")
+z.conf.int(mean(water),0.707,length(water))
+```
+The interval includes $7.6$, so the authority is probably correct.
+
+# Exercise 20
+
+## a)
+```{r}
+mu <- 3
+sigma <- 3
+sample.size <- 20
+smpl.20 <- rnorm(sample.size,mu,sigma)
+```
+### (i)
+```{r}
+mu_hat <- mean(smpl.20)
+mu_hat
+```
+### (ii)
+The 95% confidence interval is
+```{r}
+z.conf.int(mu_hat,sigma,length(smpl.20))
+```
+The 90% confidence interval will be narrower as we are allowed to make mistakes more often and hence can be more definite in our estimate; the 99% confidence interval will be wider.
+```{r}
+z.conf.int(mu_hat,sigma,length(smpl.20),0.9)
+z.conf.int(mu_hat,sigma,length(smpl.20),0.99)
+```  
+### (iii)
+All three intervals above contain the true value `r mu`, though this may be different for your intervals.
+
+## b) 
+```{r fig.align='center',fig.width=10}
+n.samples <- 100
+samples <- rnorm(n.samples*sample.size,mu,sigma)
+means <- apply(matrix(samples,ncol=sample.size),1,mean)
+hist(means,freq=FALSE,main="Distribution of the Sample Mean")
+```   
+
+Let's now calculate confidence intervals and check how many of them contain the true mean:
+```{r}
+conf.ints.matrix <- t(sapply(means,function(x){z.conf.int(x,sigma,sample.size)}))
+conf.ints <- setNames(as.data.frame(conf.ints.matrix),c("Low","High"))
+conf.ints$Case <- 1:nrow(conf.ints)
+does.contain.true.value <- function(interval,value){
+  (interval[1] <= value) & (value <= interval[2]) 
+}
+conf.ints$Is.Good <- apply(conf.ints.matrix,1,does.contain.true.value,value=mu)
+paste0(mean(!conf.ints$Is.Good)*100,"% of confidence intervals do not contain the true value.")
+```   
+```{r fig.align='center',fig.width=10}
+library(ggplot2)
+ggplot(data=conf.ints) + geom_linerange(aes(x=Case,ymin=Low,ymax=High,colour=Is.Good)) + 
+  scale_colour_manual(name="Confidence interval",
+                      values=c("FALSE"="red","TRUE"="black"),
+                      labels=c("FALSE"="does not contain true value","TRUE"="contains true value")) + 
+  theme(legend.position="bottom") + 
+  geom_hline(yintercept=mu,colour="green") + 
+  ggtitle("Confidence Intervals and the True Value")
+```    
+
+## c) 
+```{r}
+sample.size <- 100
+smpl.100 <- rnorm(sample.size,mu,sigma)
+print(mu_hat <- mean(smpl.100))
+z.conf.int(mu_hat,sigma,length(smpl.100))
+z.conf.int(mu_hat,sigma,length(smpl.100),0.9)
+z.conf.int(mu_hat,sigma,length(smpl.100),0.99)
+```  
+All three intervals are narrower than the respective intervals above for the sample size of 20.
+
+```{r fig.align='center',fig.width=10}
+samples <- rnorm(n.samples*sample.size,mu,sigma)
+means <- apply(matrix(samples,ncol=sample.size),1,mean)
+hist(means,freq=FALSE,main="Distribution of the Sample Mean")
+conf.ints.matrix <- t(sapply(means,function(x){z.conf.int(x,sigma,sample.size)}))
+conf.ints <- setNames(as.data.frame(conf.ints.matrix),c("Low","High"))
+conf.ints$Case <- 1:nrow(conf.ints)
+does.contain.true.value <- function(interval,value){
+  (interval[1] <= value) & (value <= interval[2]) 
+}
+conf.ints$Is.Good <- apply(conf.ints.matrix,1,does.contain.true.value,value=mu)
+paste0(mean(!conf.ints$Is.Good)*100,"% of confidence intervals do not contain the true value.")
+library(ggplot2)
+ggplot(data=conf.ints) + geom_linerange(aes(x=Case,ymin=Low,ymax=High,colour=Is.Good)) + 
+  scale_colour_manual(name="Confidence interval",
+                      values=c("FALSE"="red","TRUE"="black"),
+                      labels=c("FALSE"="does not contain true value","TRUE"="contains true value")) + 
+  theme(legend.position="bottom") + 
+  geom_hline(yintercept=mu,colour="green") + 
+  ggtitle("Confidence Intervals and the True Value")
+```    
+
+Try to increase the number of samples and see what happens.

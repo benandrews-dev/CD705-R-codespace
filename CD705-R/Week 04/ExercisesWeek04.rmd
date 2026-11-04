@@ -3,7 +3,6 @@ title: "CD705: Exercises, Week 4"
 date: 28 October 2026
 ---
 
-
 # Exercise 1. 
 Calculate the standard deviations for
 • all distributions in Exercise 5, Week 2;
@@ -344,6 +343,8 @@ Var(X - Y) &= Var(2X - 8)\\
 &= 4 * 1.36 = 5.44
 \end{align*}$$
 
+> NOTE: It might be nice to show this as a curve on a log scale.
+
 ```{r}
 for (N in 10^(2*(1:4))){
   boys_sample <- rhyper(N, 10, 15, 8)
@@ -375,9 +376,9 @@ sample. Find E(X - Y ) and Var(X - Y ).
 For a large lot, we can ignore the finite population correction factor and 
 treat X and Y as independent binomial random variables.
 
+$$E(X) = n * \frac{n(p)}{n} = np$$
 
-$$E(X) = n * (np / n) = np$$
-$$E(Y) = n * (n(1-p) / n) = n(1-p)$$
+$$E(Y) = n * \frac{n(1-p)}{n} = n(1-p)$$
 
 $$E(X - Y) = E(X) - E(Y) = np - n(1-p) = np - n + np = 2np - n$$
 
@@ -388,27 +389,83 @@ Var(X - Y ) through Var(X) and Var(Y ).
 
 ## Solution
 
+The trick here is to use the fact that for independent random variables, 
+the covariance is zero...
+
+$$\begin{align*}
+Var(X + Y) &= Var(X) + Var(Y) + 2Cov(X, Y) \\
+&= Var(X) + Var(Y)
+\end{align*}$$
+
+$$\begin{align*}
+Var(X - Y) &= Var((1)X + (-1)Y) \\
+&= (1)Var(X) + Var((-1)Y) + 2(1)(-1)Cov(X, Y) \\
+&= (1)^2 Var(X) + (-1)^2 Var(Y) + 2(1)(-1)(0) \\
+&= Var(X) + Var(Y) - 2Cov(X, Y) \\
+&= Var(X) + Var(Y)
+\end{align*}$$
+
 
 # Exercise 6. 
 Odds in a horse race betting are defined as follows: 3/1 (three to one against)
 means a horse is expected to win once for every three times it loses; 3/2 means two wins
 out of five races; 4/5 (five to four on) means five wins for every four defeats, etc.
-(a) Translate the above odds into ‘probabilities’ of victory.
-(b) In a certain race in France the odds for the five runners were:
+
+1. Translate the above odds into 'probabilities' of victory.
+
+2. In a certain race in France the odds for the five runners were:
 Phillipe Bois 1/1
 Gallante Effor 5/2
 Satin Noir 11/2
 Victoire Antheme 9/1
 Comme Rambleur 16/1
-Calculate the ‘probabilities’ and their sum.
-1
-(c) How much would a bookmaker expect to profit in the long run at such odds if it
+Calculate the 'probabilities' and their sum.
+
+3. How much would a bookmaker expect to profit in the long run at such odds if it
 is assumed each horse is backed equally? (Hint: assume the true probabilities are
-proportional to the ‘probabilities’ just calculated and consider the payouts corresponding to a notional e1 wager being placed on each horse.)
-(d) What would the bookmaker’s expected profit and its standard deviation have been
+proportional to the 'probabilities' just calculated and consider the payouts corresponding to a notional e1 wager being placed on each horse.)
+
+4. What would the bookmaker's expected profit and its standard deviation have been
 if horses had been backed in line with the true probabilities?
 
 ## Solution
+
+1. Converting odds to probabilities:
+
+$$3/1: 1/(3+1) = 0.25$$
+$$3/2: 2/(3+2) = 0.4$$
+$$4/5: 5/(4+5) = 5/9 \approx 0.5556$$
+
+2. Calculating probabilities for the French race:
+
+$$1/1: 1/(1+1) = 0.5$$
+$$5/2: 2/(5+2) = 2/7 \approx 0.2857$$
+$$11/2: 2/(11+2) = 2/13 \approx 0.1538$$
+$$9/1: 1/(9+1) = 0.1$$
+$$16/1: 1/(16+1) = 1/17 \approx 0.0588$$
+
+Calculating the sum of the probabilities:
+
+$$0.5 + 0.2857 + 0.1538 + 0.1 + 0.0588 = 1.0983$$
+
+3. To calculate the bookmaker's expected profit, we can assume that each horse is 
+backed equally and that the true probabilities are proportional to the calculated 
+probabilities. The expected profit can be calculated as follows:
+
+$$\text{Expected Profit} = \sum_{i=1}^{5} (1 - p_i) \cdot \frac{1}{5}$$
+
+where $p_i$ is the probability of the $i$-th horse winning.
+
+$$\text{Expected Profit} = \frac{1}{5} \left( (1 - 0.5) + (1 - 0.2857) + (1 - 0.1538) + (1 - 0.1) + (1 - 0.0588) \right)$$
+
+$$\text{Expected Profit} = \frac{1}{5} \left( 0.5 + 0.7143 + 0.8462 + 0.9 + 0.9412 \right)$$
+
+$$\text{Expected Profit} = \frac{1}{5} \times 3.9017 = 0.7803$$
+
+4. To calculate the bookmaker's expected profit and its standard deviation if 
+horses had been backed in line with the true probabilities, we can use the following formulas:
+
+
 
 # Exercise 7. 
 The manager of a stockroom in a factory knows from her records that a
@@ -460,7 +517,7 @@ lifetimes for the two types of bulbs.
 
 # Exercise 12. 
 Suppose that X and Y are independent random variables such that E X =
-E Y and the variances of X and Y exist. Show that E(X − Y )
+E Y and the variances of X and Y exist. Show that E(X - Y )
 2 = Var(X) + Var(Y ).
 
 ## Solution

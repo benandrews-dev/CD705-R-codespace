@@ -1,0 +1,472 @@
+---
+title: "CD705: Exercises, Week 5"
+date: "4 November 2026"
+---
+
+# Exercise 1. 
+
+People with certain kinds of stomach illness may be referred to a specialist
+who will identify whether or not the cause of the illness is gastric cancer. Amongst those
+referred to the specialist, the diagnosis of cancer is made in 0.7% of cases. The specialist
+sees about 150 patients per month. Calculate the probability that, in a given month, the
+specialist will diagnose: (i) no cases of cancer; (ii) more than two cases of cancer. Use two
+methods, exact via a binomial distribution and approximate via a Poisson approximation.
+
+## Response
+
+The specialist sees about 150 patients per month and a diagnosis of cancer is made
+in about 0.07% of cases.
+
+This is like flipping a very biased ($p = 0.007$) coin 150 times...
+
+The probability of no cases of cancer E(X = 0). This is the same as the probability 
+of getting 0 heads in 150 flips of a biased coin with $p = 0.007$...
+
+$$E[X=0] = (1-0.007)^{150} = 0.993^{150} = 0.349$$
+
+So the probability of no cases of cancer is about 0.349.
+
+Using the Binomial distribution...
+
+```{r}
+n <- 150
+p <- 0.007
+x <- 0
+prob <- dbinom(x, n, p)
+prob
+```
+
+The probability of more than 2 cases of cancer is the same as the probability of getting
+more than 2 heads in 150 flips of a biased coin with $p = 0.007$...
+
+
+\begin{align*}
+E[X>2] &= 1 - E[X \leq 2] \\ 
+& = 1 - (E[X=0] + E[X=1] + E[X=2]) \\
+& = 1 - (0.993^{150} + 150 * 0.007*0.993^{149} + \frac{150*149}{2}*0.007^2*0.993^{148}) \\
+\end{align*}
+
+Again, using the Binomial distribution...
+
+```{r}
+x <- 0:2
+prob <- 1 - sum(dbinom(x, n, p))
+prob
+```
+
+
+Now approximating using the Poisson distribution, we have $\lambda = np = 150*0.007 = 1.05$.
+
+```{r}
+lambda <- n*p
+x <- 0
+prob <- dpois(x, lambda)
+prob
+```
+
+```{r}
+x <- 0:2
+prob <- 1 - sum(dpois(x, lambda))
+prob
+```
+
+# Exercise 2. 
+
+According to the publishers of an encyclopedia, their quality process guarantees 
+that the probability that any given page contains a typo is 0.05%. The total
+number of pages in all volumes of the encyclopedia is 32 625. Calculate the 
+probability
+that at least 14 pages of the encyclopedia contain typos.
+
+## Response
+
+Using a Binomial distribution...
+
+```{r}
+n <- 32625
+p <- 0.0005
+x <- 14
+prob <- 1 - pbinom(x-1, n, p)
+prob
+```
+
+Using a Poisson approximation...
+
+```{r}
+lambda <- n*p
+x <- 14
+prob <- 1 - ppois(x-1, lambda)
+prob
+```
+
+# Exercise 3. 
+
+The concentration of ozone at midday at a sampling site can be assumed to
+have the normal distribution with mean 12 ppm and standard deviation 3 ppm.
+
+1.  Calculate the probability that the ozone level will be 
+(i) less than 10 ppm; 
+(ii) less than 14 ppm; 
+(iii) less than 16 ppm; 
+(iv) greater than 10 ppm; 
+(v) greater than 9 ppm; 
+(vi) between 9 and 11 ppm; 
+(vii) between 11 and 14 ppm.
+2.  Calculate the first quartile and the 95th percentile concentration of ozone.
+
+## Response
+
+The R function `pnorm` can be used to calculate the cumulative probabilities for a 
+normal distribution.
+
+```{r}
+mu <- 12
+sigma <- 3
+# (i) less than 10 ppm
+pnorm(10, mu, sigma)
+# (ii) less than 14 ppm
+pnorm(14, mu, sigma)
+# (iii) less than 16 ppm
+pnorm(16, mu, sigma)
+# (iv) greater than 10 ppm
+1 - pnorm(10, mu, sigma)
+# (v) greater than 9 ppm
+1 - pnorm(9, mu, sigma)
+# (vi) between 9 and 11 ppm
+pnorm(11, mu, sigma) - pnorm(9, mu, sigma)
+# (vii) between 11 and 14 ppm
+pnorm(14, mu, sigma) - pnorm(11, mu, sigma)
+```
+
+The first quartile and the 95th percentile can be calculated using the 
+R function `qnorm`.
+
+```{r}
+# first quartile
+qnorm(0.25, mu, sigma)
+# 95th percentile
+qnorm(0.95, mu, sigma)
+```
+
+# Exercise 4. 
+
+The life span of a shrub planted to slow down erosion on exposed slopes is
+modelled by a normal distribution with mean 6 years and standard deviation 2 years.
+a) What percentage of the shrubs planted on a hillside would live (i) 8 years or less;
+(ii) longer than 8 years; (iii) between 6 and 8 years; (iv) less than 0 years.
+b) Calculate the life spans exceeded by 25% and by 75% of the shrub population.
+
+## Response
+
+```{r}
+mu <- 6
+sigma <- 2
+# (i) 8 years or less
+pnorm(8, mu, sigma)
+# (ii) longer than 8 years
+1 - pnorm(8, mu, sigma)
+# (iii) between 6 and 8 years
+pnorm(8, mu, sigma) - pnorm(6, mu, sigma)
+# (iv) less than 0 years
+pnorm(0, mu, sigma)
+```
+
+```{r}
+# life spans exceeded by 25% and by 75% of the shrub population
+mu <- 6
+sigma <- 2
+qnorm(0.25, mu, sigma, FALSE)
+qnorm(0.75, mu, sigma, FALSE)
+```
+
+```{r}
+mu <- 6
+sigma <- 2
+x <- seq(0, 12, length.out = 100)
+y <- dnorm(x, mu, sigma)
+plot(x, y, type = "l", col = "blue", lty = 1, lwd = 2)
+abline(v = qnorm(0.25, 6, 2, FALSE), col = "red", lty = 2, lwd = 2)
+abline(v = qnorm(0.75, 6, 2, FALSE), col = "red", lty = 2, lwd = 2)
+```
+
+# Exercise 5. 
+
+The scores from an admission test are normally distributed with mean 450
+and standard deviation 100.
+
+1. What percentage of people taking the test score between 400 and 500?
+
+2. If a particular university does not admit anyone scoring below 480, what percentage
+of those taking the test would be acceptable to the university?
+
+3. What score is required to be in the top 10% of those taking the test?
+
+4. A random group of 20 people takes the test in one room.
+
+    1. What is the mean and the standard deviation of their average score?
+
+    2. What is the probability that their average score is 480 or more?
+
+    3. What is the probability that all of them will score below 480?
+
+    4. What is the probability that at least one of them will score below 480?
+
+## Response
+
+```{r}
+mu <- 450
+sigma <- 100
+# 1. percentage of people scoring between 400 and 500
+pnorm(500, mu, sigma) - pnorm(400, mu, sigma)
+
+# 2. percentage of people scoring 480 or more
+1 - pnorm(480, mu, sigma, lower.tail = FALSE)
+
+# 3. score required to be in the top 10%
+qnorm(0.9, mu, sigma, lower.tail = FALSE)
+
+# 4. random group of 20 people
+```
+
+
+\begin{align*}
+\bar{X}_{n} &= \frac{1}{n} \sum{X_i} \\
+\text{E} \bar{X}_{n} &= \text{E}X \\
+\text{Var} \left(\bar{X}_{n}\right) &= \frac{1}{n} \text{Var}(X) \\
+\end{align*}
+
+```{r}
+n <- 20
+# 4.1 mean and standard deviation of their average score
+mu_xbar <- mu
+sigma_xbar <- sigma / sqrt(n)
+
+# The mean is given by mu_xbar and the standard deviation is given by sigma_xbar. 
+# The variance is given by var_xbar = sigma_xbar^2.
+
+mu_xbar
+sigma_xbar
+var_xbar <- sigma_xbar^2
+var_xbar
+```
+
+```{r}
+# 4.2 probability that their average score is 480 or more
+1 - pnorm(480, mu_xbar, var_xbar)
+```
+
+```{r}
+# 4.3 probability that all of them will score below 480
+pnorm(480, mu_xbar, sigma_xbar)^n
+```
+
+```{r}
+# 4.4 probability that at least one of them will score below 480
+1 - pnorm(480, mu_xbar, sigma_xbar)^n
+
+```
+
+# Exercise 6. 
+
+A machine which automatically packs potatoes into bags is known to operate
+with the mean of 25 kg and the standard deviation of 0.5 kg. Assume a normal distribution
+for the weights of bags.
+a) What percentage of bags weigh: (i) more than 25 kg; (ii) between 24 and 26 kg?
+b) A lorry is loaded with 100 such bags. What is the probability that the total weight
+of the load will be between 2400 and 2600 kg?
+
+## Response
+
+```{r}
+mu <- 25
+sigma <- 0.5
+var <- sigma^2
+# a) (i) percentage of bags weighing more than 25 kg
+1 - pnorm(25, mu, sigma)
+```
+```{r}
+# a) (ii) percentage of bags weighing between 24 and 26 kg
+pnorm(26, mu, sigma) - pnorm(24, mu, sigma)
+```
+```{r}
+# b) lorry loaded with 100 bags
+n <- 100
+mu_total <- n * mu
+sigma_total <- sqrt(n) * sigma
+# probability that total weight is between 2400 and 2600 kg
+pnorm(2600, mu_total, sigma_total) - pnorm(2400, mu_total, sigma_total)
+```
+
+# Exercise 7. 
+
+A machine fills containers with a powder. It is believed from past data that
+the filling weights have a normal distribution with the standard deviation of 0.6 grams.
+If only 2% of the containers hold less than 18 grams, what is the mean filling weight for
+the machine?
+
+## Response
+
+# Exercise 8. 
+
+The mass of a humming-bird may be modelled approximately as a random
+variable having a normal distribution. Find its mean and standard deviation if 14% of
+birds have the mass of 15.15 grams or less and 14% of birds have the mass of 15.41 grams
+or more.
+
+## Response
+
+# Exercise 9. 
+
+Ball-shaped objects can be divided into groups by diameter using a board
+with holes of different sizes. Assume that the diameter of apples of a particular crop has
+a normal distribution. Find its mean and standard deviation if 5% of apples have the
+diameter greater than 85 mm and 20% of apples have the diameter greater than 80 mm.
+
+## Response
+
+
+# Exercise 10. 
+
+In 2012-13, the average income of a UK taxpayer was £27 300 before tax.
+a) If it is known that 50% of taxpayers had an income of £21 000 or less, and 28.5%
+had an income of £33 600 or more, find a lower bound for the standard deviation
+of incomes.
+b) If it is known that 1% of taxpayers had an income of £150 000 or more, find a lower
+bound for the standard deviation of incomes.
+
+## Response
+
+
+
+# Exercise 11. 
+
+A sample is taken from a given distribution with a finite variance.
+a) If the sample size is 100, what is the probability that the sample mean will be
+within 1 standard deviation of the mean of the distribution?
+b) How large a random sample must we take for the probability to be at least 0.99
+that the sample mean will be within 2 standard deviations of the mean of the
+distribution?
+
+## Response
+
+
+
+# Exercise 12. 
+
+A loaded coin is tossed 1000 times. The probability of a Head for this
+coin is 0.4. Estimate the smallest margin k for which the probability that the number of
+heads will deviate from 400 by k or more is at most 5%.
+
+## Response
+
+
+# Exercise 13. 
+
+A random sample is to be taken from a distribution with mean µ and
+standard deviation 3. Estimate the smallest value of n for which Pr[|Xn−µ| < 0.3] ≥ 0.95,
+where Xn is the sample mean for a sample of size n.
+
+## Response
+
+
+# Exercise 14. 
+
+The probability of a Head for a loaded coin is 0.4. Estimate the smallest
+number of tosses in order for the probability to be at least 95% that the proportion of
+heads will be (i) between 0.3 and 0.5; (ii) less than 0.5; (iii) at least 0.2.
+
+## Response
+
+
+# Exercise 15. 
+
+The proportion of defective items in a large manufactured lot is 0.1. Estimate the smallest size of a random sample of items that must be taken from the lot in
+order for the probability to be at least 0.99 that the proportion of defective items in the
+sample will be less than 0.13.
+
+## Response
+
+
+# Exercise 16. 
+
+A life insurance company sells a term insurance policy to a 21-year-old
+male that pays £100 000 if the insured dies within the next 5 years. The probability that
+a randomly chosen male will die each year can be found in mortality tables. The company
+collects a premium of £250 each year as payment for the insurance. The amount X that
+the company earns on this policy is £250 per year, less the £100 000 that it must pay if
+the insured dies. The following table gives the distribution of X.
+Age at Death 21 22 23 24 25 ≥ 26
+Earnings -£99 750 -£99 500 -£99 250 -£99 000 -£98 750 £1 250
+Probability .00183 .00186 .00189 .00191 .00193
+a) Fill in the missing probability in the table and calculate the mean earnings E X.
+b) It would be quite risky for you as an individual to insure the life of a 21-year-old
+male friend on these conditions: though there is a high probability that your friend
+would live and you would gain £1 250 in premiums, if he were to die, you would lose
+almost £100 000. Explain, referring to relevant mathematical results, why selling
+insurance is not really risky for an insurance company that insures hundreds of
+thousands of young men.
+c) Estimate the number of young men the insurance company needs to insure in order
+for the probability of losses to be at most (i) 1%; (ii) 0.1%; (iii) 0.0001%.
+
+## Response
+
+
+# Exercise 17. 
+
+A random sample of size n is drawn from the UK voting population. Let X
+be the number of people in the sample which support the Higher Education and Research
+Bill 2016-17.
+a) If p is the proportion of people supporting the bill in the voting population, write
+down the exact and approximate distributions of X and the approximate distribution of the estimate pˆ =
+X
+n
+.
+b) Estimate the smallest sample size n for which the margin of error of pˆ is 2% with
+probability 95%.
+
+## Response
+
+
+# Exercise 18. 
+
+CJW Limited conduct customer surveys monthly. The overall satisfaction
+score in these surveys ranges from 0 to 100. They calculate the sample mean of the score
+and estimate the population standard deviation of the score. For a number of months,
+their estimate of the population standard deviation remained close to 12.
+During the most recent month, they surveyed 100 customers and obtained a sample
+mean of 72. Find a 95% confidence interval for the population mean during the most
+recent month.
+
+## Response
+
+
+# Exercise 19. 
+
+A water company assumes that the pH of its drinking water supply has
+the mean of 7.6 and the standard deviation of 0.707. A random sample of 30 test tubes
+of water is taken from the supply and the pH values are found to be (see water.csv on
+My Studies): 7.6 6.8 9.2 8.0 8.4 7.4 6.2 7.6 7.4 7.9 7.5 8.0 8.1 7.6 7.4 7.7 8.1 9.1 7.7 7.2
+7.4 8.0 8.3 8.5 7.8 7.6 8.1 6.7 8.3 7.5.
+Does the water company assumption look plausible? Explain your answer.
+
+## Response
+
+
+# Exercise 20. 
+
+Consider the normal distribution with mean µ = 3 and standard deviation
+σ = 3.
+a) Generate a sample of size 20.
+(i) Calculate the sample mean for this sample.
+(ii) Calculate a 95% confidence interval for µ assuming the normal distribution of
+the sample mean.
+Will 90% and 99% confidence intervals for µ be wider or narrower than a 95%
+confidence interval? Calculate them to check your answer.
+(iii) Do your intervals contain the true value of µ = 3?
+b) Generate 100 samples of size 20 and calculate the sample mean for each sample.
+Plot a histogram of the obtained sample means. Calculate 95% confidence intervals
+as above and find the percentage of those not containing the true value of µ = 3.
+c) Repeat the previous two steps for samples of size 100. Are the respective confidence
+intervals wider or narrower than for samples of size 20?
+
+## Response

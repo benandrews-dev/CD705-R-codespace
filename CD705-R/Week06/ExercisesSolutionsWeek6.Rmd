@@ -1,0 +1,161 @@
+---
+title: "CD705, Week 6: Solutions / Answers to Exercises"
+author: "Alexey Chernov"
+date: "11 November 2026"
+---
+
+
+```{r}
+set.seed(13012021) 
+z.conf.int<-function(sample.mean,sigma,n,level=0.95){ 
+  margin<-sigma*qnorm(1-(1-level)/2)/sqrt(n); 
+  c(sample.mean-margin,sample.mean+margin)
+}
+t.conf.int<-function(sample.mean,sigma,n,level=0.95){ 
+  margin<-sigma*qt(1-(1-level)/2,n-1)/sqrt(n);
+  c(sample.mean-margin,sample.mean+margin)
+}
+```  
+
+# Exercise 1
+## a)
+Since the standard deviation was estimated from the same sample, we use the $t$-distribution:
+```{r}
+onecinema<-t.conf.int(25467,4980,100)
+onecinema
+```
+## b)
+```{r}
+total<-3672*onecinema
+total/10^6
+```
+## c)  
+As the lower bound of the confidence interval is $89.88$ million, which is greater than $72$ million, we can confidently say that the record was broken.
+
+# Exercise 2
+
+The null hypothesis is that $X\sim\mathcal{N}(34.2,\sigma^2)$. As $\sigma^2$ is not known, we need to use the $t$-test. The (two-tailed) $p$-value is
+```{r}
+heads<-scan("heads.csv",sep=",")
+2*pt(abs((mean(heads)-34.2)/(sd(heads)/sqrt(length(heads)))),length(heads)-1,lower.tail=FALSE)
+```
+We can also use the R command for $t$-test:
+```{r}
+t.test(heads,mu=34.2)
+```
+The $p$-value is less than $3$%, so we can reject the null hypothesis at the standard $5$% significance level. It is reasonable to conclude that the population mean head circumference is different from $34.2$cm.
+
+# Exercise 3
+Let $\mu$ be the actual average level to which the machine fills the cartoons. 
+
+## Confidence interval
+
+Let's calculate the $95$% lower confidence bound for $\mu$ (that is, we use a method that will give a number smaller than $\mu$ for $95$% of samples) given that the standard deviation is $0.03$:
+```{r}
+sugar<-scan("sugar.csv",sep=",")
+mean(sugar) - 0.03*qnorm(0.95)/sqrt(length(sugar))
+```
+It is greater than $1$, so the machine is indeed overfilling the cartons (save for a less than $5$% chance of an usual sample).
+
+## Hypothesis test
+We want to obtain evidence that the machine is overfilling the cartons, 
+hence we will try to reject the hypothesis that $\mu\le 1$.
+The null hypothesis is that $X\sim\mathcal{N}(\mu,0.03^2)$, $\mu\le1$.
+We need to calculate the upper-tail probability, hence the $p$-value for $\mu=1$ is
+```{r}
+sugar<-scan("sugar.csv",sep=",")
+pnorm((mean(sugar)-1)/(0.03/sqrt(length(sugar))),lower.tail=FALSE)
+```
+The $p$-value is less then $0.001$%, so we reject the null hypothesis with a very high confidence.
+
+# Exercise 4
+The null hypothesis is that $X\sim\mathcal{N}(7.6,0.707)$. The (two-tailed) $p$-value is 
+```{r}
+water<-scan("water.csv",sep=",")
+2*pnorm(abs((mean(water)-7.6)/(0.707/sqrt(length(water)))),lower.tail=FALSE)
+```
+The $p$-value is quite large, so there is no reason to reject the null hypothesis.
+
+# Exercise 5
+If $25$ is the median indeed, then $X\sim B(20,0.5)$.
+
+## a) 
+Type I error is the probability to reject the null hypothesis wrongly, so the probability of Type I error is calculated assuming that $X\sim B(20,0.5)$ and equal to $\Pr[X\le 4\text{ or }X\ge 16]$:
+```{r}
+pbinom(4,20,0.5)+pbinom(15,20,0.5,FALSE)
+```
+
+## b)
+Since $\Pr[X\le\delta] = \Pr[X\ge 20-\delta]$, we need to find $\delta$ such that $\Pr[X\le\delta]\le0.025$:
+```{r}
+qbinom(0.025,20,0.5) - 1
+```   
+We subtract $1$ because `qbinom` produces the smallest value of $x$ such that $\Pr[X\le x]$ is not less than the given threshold. For a discrete distribution like binomial, this makes an important difference as illustrated below:
+```{r}
+pbinom(6,20,0.5)
+pbinom(5,20,0.5)
+```   
+
+## c) 
+
+Let's now count $Y$, the number of observed lifetimes which are less than $25$ hours. 
+If the true median lifetime is $25$ hours, then $Y\sim B(20,0.5)$ as before.
+If the true median is greater than $25$ hours, then $Y\sim B(20,p)$ with some $p<0.5$.
+
+Consider the probability $\Pr[Y\ge 20 - \delta]$. We can calculate it for $Y\sim B(20,0.5)$.
+If $Y\sim B(20,p)$ with some $p<0.5$, the probability $\Pr[Y\ge 20 - \delta]$ will be smaller.
+Hence, if the value of $\delta$ is such that $\Pr[Y\ge 20 - \delta]$ is small for $Y\sim B(20,0.5)$,
+then $\Pr[Y\ge 20 - \delta]$ will also be small for $Y\sim B(20,p)$ with any $p<0.5$.
+
+Let $y$ be the observed number  of lifetimes less then $25$ hours.
+The testing procedure is as follows: reject the hypothesis that the median lifetime is at least $25$ hours
+if $y \le 20 - \delta$. An appropriate value of $\delta$ is selected to guarantee the desired 
+significance similarly to (b) above.
+
+
+# Exercise 6
+
+We assess whether the goal scoring ability of a ``typical player'' changes.
+```{r}
+library(Hmisc)
+bask <- spss.get("basketball.sav")
+t.test(bask$BEFORE - bask$AFTER,mu=0)
+t.test(bask$BEFORE,bask$AFTER,paired=TRUE) # a different interface to the same test
+```   
+The p-value is barely significant. We have some evidence that the goal scoring ability changes.
+
+Remark: if the data had been the scores of two different players, we would have not obtained any significant difference:
+```{r}
+t.test(bask$BEFORE,bask$AFTER)
+```   
+However, removing just one point looking like an outlier makes the difference significant:
+```{r}
+t.test(bask$BEFORE,bask$AFTER[-4])
+```   
+
+# Exercise 7
+
+The recorded levels from the same site vary significantly, and the calendar gives us a natural matching,
+so we will look how the difference between the two sites changes.
+```{r}
+phos <- read.csv("phosphorus.csv")
+t.test(phos$Site.1-phos$Site.2,mu=0)
+```   
+The p-value is quite small, hence there is a significant difference between the two sites.
+
+# Exercise 8 
+
+10 unrelated plants of each species were selected, so we use a two-samples test.
+```{r}
+seaweed <- read.csv("seaweed.csv")
+t.test(seaweed$Spiralis,seaweed$Serratus)
+```  
+No evidence of significant difference.
+
+# Exercise 9
+
+```{r}
+heatstress <- read.csv("heatstress.csv")
+t.test(heatstress$Men,heatstress$Women)
+```   
+No evidence of significant difference.

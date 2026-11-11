@@ -1,0 +1,361 @@
+---
+title: "| CD705 Statistical Data Analysis with R \n|\n| 
+        Week 6.1: R Lecture Companion\n|\n|\n"
+author: "Alexey Chernov"
+date: "11 November 2026"
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+#options(width = 120)
+knitr::opts_chunk$set(fig.width=10,fig.align='center')
+```   
+
+# Hypothesis Tests through Simulations
+
+Let's obtain the $p$-values for the examples considered in the lecture using direct simulations,
+that is, by comparing the observed value with a large sample from the hypothesised distribution.
+
+```{r set-seed}
+set.seed(13012021)
+n.sim <- 1e6
+```     
+
+### Cereals Example
+
+Here we find out how often a value from the hypothesised distribution deviates from the mean 
+more than the observed value.
+
+```{r cereal-simulation}
+observed.x <- 322.4
+hypothesised.mean.x <- 325
+hypothesised.sd.x <- 5
+n.boxes <- 30
+sample.from.hypothesised.distribution <- 
+  rnorm(n.sim,hypothesised.mean.x,hypothesised.sd.x/sqrt(n.boxes))
+p.value <- mean(abs(sample.from.hypothesised.distribution - hypothesised.mean.x) 
+                >= 
+                  abs(observed.x - hypothesised.mean.x))
+print(p.value)
+```       
+
+We can get the precise $p$-value by calculating the respective normal probability:
+```{r cereal-exact}
+z.test.two.tail <- function(observed,hypothesised.mean,hypothesised.sd){
+  margin <- abs(observed - hypothesised.mean)
+  return(2*pnorm(hypothesised.mean - margin,hypothesised.mean,hypothesised.sd))
+}
+z.test.two.tail(observed.x,hypothesised.mean.x,hypothesised.sd.x/sqrt(n.boxes))
+```      
+
+### Lady Tasting Tea
+
+```{r lady-simulation}
+n.cup <- 4 # the number of cups each way
+# 1 denotes a tea-first cup, 0 denotes a milk-first cup
+# the lady chooses milk-first cups, 
+# so the number of 1s in the sample is the number of mistakes
+hypothesised.n.mistakes <- 
+  replicate(n.sim,
+            sum(sample(c(rep.int(1,n.cup),rep.int(0,n.cup)),n.cup,replace=FALSE))
+            )
+## equivalently and more efficiently, we can use
+# hypothesised.n.mistakes <- rhyper(n.sim,n.cup,n.cup,n.cup)
+print(paste0("Probablity of no mistakes: ",mean(hypothesised.n.mistakes==0)))
+print(paste0("Probablity of at most one mistake: ",mean(hypothesised.n.mistakes<=1)))
+print(paste0("Probablity of no or all mistakes: ",
+             mean(hypothesised.n.mistakes==0 | hypothesised.n.mistakes==n.cup)))
+```      
+
+# T(1) has No Expectation
+
+This is a digression from the today topic, Student's $t$-distribution with 1 degree of freedom
+is an example of a distribution without the expectation.
+
+Let's see this using simulations: we'll calculate the mean of one million values randomly chosen 
+from T(1), Student's $t$-distribution with 1 degree of freedom, and repeat this 100 times to see that 
+the results vary considerably:
+```{r t1-no-expectation}
+sample.of.t1.means <- replicate(100,mean(rt(1e6,1)))
+summary(sample.of.t1.means)
+sd(sample.of.t1.means)
+boxplot(sample.of.t1.means)
+```   
+
+For comparison, do the same for the standard normal distribution and see what the existence of expectation looks like:
+```{r normal-expectation}
+sample.of.norm.means <- replicate(100,mean(rnorm(1e6)))
+summary(sample.of.norm.means)
+sd(sample.of.norm.means)
+boxplot(sample.of.norm.means)
+```   
+
+# Significance and Power
+
+Now let's repeat hypothesis testing many times for different observed values. 
+The observed values will be simulated either from the distribution of a null hypothesis, 
+hence allowing us to estimate the number of Type I errors,
+or from the distribution of an alternative hypothesis,
+hence allowing us to estimate the power of the test.
+
+## Cereals Example
+
+### Type I error
+Let's generate samples of size $30$ from a distribution with mean $325$ and standard deviation $5$.
+To illustrate the CLT additionally, we will use the uniform distribution with these parameters, not the normal
+distribution:
+```{r cereal-setup-typeI}
+hyp.mean <- 325
+hyp.sd <- 5
+n.boxes <- 30
+unif.min <- hyp.mean - hyp.sd*sqrt(3)
+unif.max <- hyp.mean + hyp.sd*sqrt(3)
+observed.average.weights <- replicate(n.sim,
+                                      mean(runif(n.boxes,unif.min,unif.max))
+                                      )
+```     
+
+We test each of the simulated observed values using the z-test. 
+If the $p$-value is less than the chosen significance level, we reject the null hypothesis,
+which is an error in this case (the simulated sample was generated from the null hypothesis).
+```{r cereal-typeI}
+significance.level <- 0.05
+z.test.mean <- hyp.mean
+z.test.sd <- hyp.sd/sqrt(n.boxes)
+test.p.values <- z.test.two.tail(observed.average.weights,
+                                 hyp.mean,hyp.sd/sqrt(n.boxes))
+print(paste0("The proportion of Type I errors is ",
+             mean(test.p.values < significance.level)))
+```        
+Note that the proportion of Type I errors is approximately equal to the significance level, 
+as it should be.
+
+
+### Power
+
+Now we will simulate observed values from a different distribution. 
+For simplicity, it will be a normal distribution but with a different mean.
+```{r cereal-setup-typeII}
+alt.hyp.mean <- 320
+observed.average.weights <- rnorm(n.sim,alt.hyp.mean,hyp.sd/sqrt(n.boxes))
+```        
+As before, we test each of the simulated observed values using the z-test. 
+However, now rejecting the null hypothesis is a correct decision.
+```{r cereal-typeII}
+test.p.values <- z.test.two.tail(observed.average.weights,
+                                 hyp.mean,hyp.sd/sqrt(n.boxes))
+print(paste0("The power of the test is ",
+             mean(test.p.values < significance.level)))
+```      
+
+Let's repeat for another mean:
+```{r cereal-another-typeII}
+alt.hyp.mean <- 324
+observed.average.weights <- rnorm(n.sim,alt.hyp.mean,hyp.sd/sqrt(n.boxes))
+test.p.values <- z.test.two.tail(observed.average.weights,
+                                 hyp.mean,hyp.sd/sqrt(n.boxes))
+print(paste0("The power of the test is ",
+             mean(test.p.values < significance.level)))
+```      
+
+
+## One sample t-test
+
+We begin with testing the hypothesis that the true mean is equal to a given value.
+
+### Normal distribution, the true hypothesis about the mean
+
+Let us apply the test to the normally distributed data with the mean as hypothesised.
+```{r}
+Simulation.Repeated <- 10000 # the number of times we repeat the simulation - affects accuracy of the results
+repl <- 10 # the number of replications, n, also called the sample size
+significance <- 0.05
+n.errors <- 0 # this is just a counter
+for(i in 1:Simulation.Repeated){
+  x <- rnorm(repl); # generate i.i.d. "observations" from the standard normal distribution
+
+  # calculate the p-value from the t-test 
+  if (t.test(x,mu=0)$p.value < significance){
+    # if the p-value is smaller than the significance level, 
+    # then it is a Type I error (rejecting the null hypothesis, while it is correct)
+    n.errors <- n.errors + 1
+  }
+}
+n.errors/Simulation.Repeated
+```   
+The number of Type I errors is quite close to the significance level, which corresponds to the definition of a p-value.
+
+### Normal distribution, false hypotheses about the mean
+
+Now, let us try a different hypothesised mean. What was the number of Type I errors will now be the number of correct rejections, or the power of the test. (I'll keep the same name of the variable to emphasise that the code is the same; hopefully, there will not be much confusion.) 
+```{r}
+for(mu in c(1,0.5,0.1)){
+  n.errors <- 0 
+  for(i in 1:Simulation.Repeated){
+    x <- rnorm(repl); # generate i.i.d. "observations" from the standard normal distribution
+  
+    # the t-test now tests a different hypothesis, so "n.errors" is now the number of correct answers!
+    if (t.test(x,mu=mu)$p.value < significance){
+      n.errors <- n.errors + 1
+    }
+  }
+  print(paste0("For the true mean = ",mu, " the power is ",n.errors/Simulation.Repeated),quote=FALSE)
+}
+```   
+As it should be, the power decreases when the tested hypothesis becomes closer to the true mean of the distribution.
+
+### Other distributions, the true hypothesis about the mean
+
+Now let us try to apply the t-test, while the assumption is violated, that is, the distribution is not normal. 
+
+The closest to normal are t-distributions with different degrees of freedom (the more degrees of freedom, the closer).
+```{r}
+for(df in c(1,2,5,10,50)){
+  n.errors <- 0 
+  for(i in 1:Simulation.Repeated){
+    x <- rt(repl,df=df); # generate i.i.d. "observations" from the t-distribution with df degrees of freedom
+  
+    if (t.test(x,mu=0)$p.value < significance){
+      n.errors <- n.errors + 1
+    }
+  }
+  print(paste0("For t with ",df, " degrees of freedom, the true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+}
+```   
+When the correct distribution is a t-distribution, the t-test is too conservative: it rejects the null hypothesis less often.
+
+A uniform distribution:
+```{r}
+for(i in 1:Simulation.Repeated){
+  x <- runif(repl,min=-1,max=1); # generate i.i.d. "observations" from the uniform distribution of [-1,1]
+
+  if (t.test(x,mu=0)$p.value < significance){
+    n.errors <- n.errors + 1
+  }
+}  
+print(paste0("The true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+An exponential distribution:
+```{r}
+for(i in 1:Simulation.Repeated){
+  x <- rexp(repl,rate=1)-1; 
+  # generate i.i.d. "observations" from the exponential distribution with 1 subtracted to make the mean 1
+
+  if (t.test(x,mu=0)$p.value < significance){
+    n.errors <- n.errors + 1
+  }
+}  
+print(paste0("The true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+A very common practical situation: rounded observations from a normal distribution.
+```{r}
+for(d in c(0,0,0,0,1,2,3,4)){
+  n.errors <- 0 
+  for(i in 1:Simulation.Repeated){
+    x <- round(rnorm(repl),digits=d); 
+    # generate i.i.d. "observations" from the standard normal distribution but rounded to d digits only
+  
+    try(
+    # sometimes the sample consists of identical values and t.test() returns an error - try() allows us to ignore such cases
+      if (t.test(x,mu=0)$p.value < significance){
+        n.errors <- n.errors + 1
+      }
+    )
+  }
+  print(paste0("For ",d, " digits, the true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+}
+```   
+The distributions of rounded values are actually discrete, but nevertheless the p-values are very close to the stated ones.
+
+## Two sample t-test
+
+Here we will consider normal distributions only.
+You can consider deviations from normality on your own similarly to the above.
+
+### Equal variances
+
+Let us begin with the true hypothesis of equal means for two samples from the standard normal distribution.
+```{r}
+repl <- 4 # for smaller sample size the difference between pooled and non-pooled variances is more visible
+  n.errors.p <- 0
+  n.errors.np <- 0
+  for(i in 1:Simulation.Repeated){
+    x <- rnorm(repl); y <- rnorm(repl); # generate two i.i.d. samples from the standard normal distribution
+  
+    if (t.test(x,y,var.equal=FALSE)$p.value < significance){
+      n.errors.np <- n.errors.np + 1
+    }
+    if (t.test(x,y,var.equal=TRUE)$p.value < significance){
+      n.errors.p <- n.errors.p + 1
+    }
+  }
+  print(paste0("For pooled variance, the p-value is ",n.errors.p/Simulation.Repeated),quote=FALSE)
+  print(paste0("For non-pooled variance, the p-value is ",n.errors.np/Simulation.Repeated),quote=FALSE)
+```   
+
+Now let us look at two samples from normal distributions with the same variance but different means.
+```{r}
+for(mu in c(3,2,1,0.5,0.1)){
+  n.errors.p <- 0
+  n.errors.np <- 0
+  for(i in 1:Simulation.Repeated){
+    x <- rnorm(repl); y <- rnorm(repl) + mu; # the second sample has the mean equal to mu
+  
+    if (t.test(x,y,var.equal=FALSE)$p.value < significance){
+      n.errors.np <- n.errors.np + 1
+    }
+    if (t.test(x,y,var.equal=TRUE)$p.value < significance){
+      n.errors.p <- n.errors.p + 1
+    }
+  }
+  print(paste0("For pooled variance and shift ",mu," the power is ",n.errors.p/Simulation.Repeated),quote=FALSE)
+  print(paste0("For non-pooled variance and shift ",mu," the power is ",n.errors.np/Simulation.Repeated),quote=FALSE)
+}  
+```   
+Note that the non-pooled variance test is systematically less powerful (more conservative).
+
+### Non-equal variances
+
+Now a true hypothesis of equal means, but the actual variances are different:
+```{r}
+for (sd in c(2,3,5)){
+  n.errors.p <- 0
+  n.errors.np <- 0
+  for(i in 1:Simulation.Repeated){
+    x <- rnorm(repl); y <- rnorm(repl,sd=sd); # one standard deviation is 1 and the other is sd
+  
+    if (t.test(x,y,var.equal=FALSE)$p.value < significance){
+      n.errors.np <- n.errors.np + 1
+    }
+    if (t.test(x,y,var.equal=TRUE)$p.value < significance){
+      n.errors.p <- n.errors.p + 1
+    }
+  }
+  print(paste0("For pooled variance and the second standard deviation ",sd,", the true p-value is ",n.errors.p/Simulation.Repeated),quote=FALSE)
+  print(paste0("For non-pooled variance and the second standard deviation ",sd,", the true p-value is ",n.errors.np/Simulation.Repeated),quote=FALSE)
+}  
+```   
+As before, the pooled variance test is more powerful, but note that in this case the true p-value 
+is greater than the chosen significance level. This is the main result of assumptions violation (compare with non-normal distributions above).
+
+Now two samples from normal distributions with different variances and different means.
+```{r}
+for(mu in c(5,3,2,1)){
+  n.errors.p <- 0
+  n.errors.np <- 0
+  for(i in 1:Simulation.Repeated){
+    x <- rnorm(repl); y <- rnorm(repl,mean=mu,sd=3); # one standard deviation is 1 and the other is 3
+  
+    if (t.test(x,y,var.equal=FALSE)$p.value < significance){
+      n.errors.np <- n.errors.np + 1
+    }
+    if (t.test(x,y,var.equal=TRUE)$p.value < significance){
+      n.errors.p <- n.errors.p + 1
+    }
+  }
+  print(paste0("For pooled variance and shift ",mu,", the power is ",n.errors.p/Simulation.Repeated),quote=FALSE)
+  print(paste0("For non-pooled variance and shift ",mu,", the power is ",n.errors.np/Simulation.Repeated),quote=FALSE)
+}  
+```   
+Again, the pooled variance test is more powerful, but we cannot trust this power!

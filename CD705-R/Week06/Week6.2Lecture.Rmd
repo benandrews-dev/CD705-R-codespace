@@ -1,0 +1,200 @@
+---
+title: "| CD705 Statistical Data Analysis with R \n|\n| 
+        Week 6.2:  Low-Level Graphics in R\n|\n|\n"
+author: "Alexey Chernov"
+date: "11 November 2026"
+output:
+  html_document:
+    css: custom.css
+  pdf_document: default
+  word_document: default
+---
+
+```{r set-options, echo=FALSE,message=FALSE}
+options(width=120)
+knitr::opts_chunk$set(fig.width=12,fig.height=8,fig.align='center')
+library(printr) # to print library(help=...)
+```
+
+
+Sometimes, when we want to visualise something unusual, 
+we may need to use very low-level tools.
+
+As an example, let's take the positions of planets of the Solar System with respect to Earth on 11 November 2026, 14:00 GMT,
+from http://cosinekitty.com/solar_system.html: 
+```{r planets-print}
+print(planets <- read.csv("planets2026.csv"))
+```   
+The distances and coordinates are in astronomical units (1AU = 149 597 870 700 m, or the mean distance between Earth and Sun).
+The unit for the radii is the radius of Earth.
+
+
+Let's start with a minimal plot:
+```{r plot-minimal}
+plot.new()
+plot.window(xlim=c(0,1),ylim=c(0,1))
+plot.xy(xy.coords(x=0.5,y=0.5),type="p")
+```   
+
+Higher-level functions have a lot of defaults:
+```{r plot-default}
+plot.default(planets$X)
+```   
+
+We need to look at the data and decide what we want to plot:
+```{r planets-summary}
+summary(planets)
+```   
+The Z coordinate seems less informative in comparison, so we will ignore it instead of choosing some 
+more complicated projection.
+
+Prepare the canvas using some mid-level graphics (here `plot` is the same as `plot.default`): 
+```{r plot-boundaries}
+xrange <- range(planets$X)
+yrange <- range(planets$Y)
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU")
+```   
+
+Not quite square! We need to set a graphical parameter:
+```{r plot-square}
+par(pty="s")
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU",asp=1)
+```   
+
+Some extra change:
+```{r plot-las}
+par(pty="s") 
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU",asp=1,las=1)
+# las=1 write labels on the vertical axis horizonally
+```   
+
+Now we can add the points for planets:
+```{r planets-points}
+par(pty="s") 
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU",asp=1,las=1)
+points(planets$X,planets$Y) 
+```
+
+The points are unrecognisable. Let's add some visual attributes: 
+the colours are approximately the real colours of the planets, 
+the shapes emphasise the most important planets, Sun and Earth,
+and the point sizes are proportional to the planet radii in the *logarithmic scale*.
+```{r planets-symbols}
+planet.colours <- c("orange","black","brown","deepskyblue","red","tan","gold","cyan","blue")
+planet.shapes <- c(8,16,16,10,16,16,16,16,16)
+planet.sizes <- round(log(planets$Radius + 2)*0.8,1)
+par(pty="s") 
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU",asp=1,las=1)
+points(planets$X,planets$Y,
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes) 
+```   
+
+Add a legend and title:
+```{r planets-legend}
+par(pty="s") 
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU",asp=1,las=1)
+points(planets$X,planets$Y,
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes) 
+
+# title 
+title.bottom <- mean(yrange)+0.5*(xrange[2]-xrange[1])-1
+text(x=-xrange[1]-9,y=title.bottom,
+     labels="Planets of the Solar System",adj=0,cex=2.8,col="red")
+
+# legend
+legend.right <- xrange[2] - 0.5
+rect(xleft = legend.right - 7.5, ybottom = title.bottom - 4 - nrow(planets),
+     xright = legend.right, ytop = title.bottom - 2.5)
+points(x=rep(legend.right-5.5,nrow(planets)),y=title.bottom - 3 - (1:nrow(planets)),
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes)
+text(x=rep(legend.right-4,nrow(planets)),y=title.bottom - 3 - (1:nrow(planets)),
+     labels=planets$Name,adj=0)
+```   
+The positions of the title and legend were found experimentally.
+
+We can also save the picture as a pdf file:
+```{r planets-pdf}
+pdf("planets.pdf",width=9,height=9)
+par(pty="s") 
+plot(x=NULL,xlim=xrange,ylim=yrange,xlab="X, AU",ylab="Y, AU",asp=1,las=1)
+points(planets$X,planets$Y,
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes) 
+
+# title 
+title.bottom <- mean(yrange)+0.5*(xrange[2]-xrange[1])-1
+text(x=-xrange[1]-2,y=title.bottom,
+     labels="Planets of the Solar System",adj=0,cex=2.8,col="red")
+
+# legend
+legend.right <- xrange[2] - 0.5
+rect(xleft = legend.right - 7.5, ybottom = title.bottom - 4 - nrow(planets),
+     xright = legend.right, ytop = title.bottom - 2.5)
+points(x=rep(legend.right-5.5,nrow(planets)),y=title.bottom - 3 - (1:nrow(planets)),
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes)
+text(x=rep(legend.right-4,nrow(planets)),y=title.bottom - 3 - (1:nrow(planets)),
+     labels=planets$Name,adj=0)
+dev.off()
+```   
+
+Low-level graphics require a lot of manual adjustments, and it is quite inconvenient if you need to change something.
+For example, several years ago I decided to show 9 planets instead of 7 I showed the year before. 
+Compare the code above with the following code and notice how many tweaks of 
+graphical coordinates were necessary:
+```{r planets-2021, eval=FALSE}
+planets <- read.csv("planets2021.csv")
+par(pty="s") 
+plot(x=NULL,xlim=c(-10,10),ylim=c(-10,10),xlab="X, AU",ylab="Y, AU",asp=1,las=1)
+points(planets$X,planets$Y,
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes) 
+points(x=rep(7,nrow(planets)),y=9:3,
+       col = planet.colours,
+       pch = planet.shapes,
+       cex = planet.sizes)
+text(x=rep(8,nrow(planets)),y=9:3,labels=planets$Name,adj=0)
+rect(xleft=5,ybottom=2,xright=10.5,ytop=10)
+text(x=-10,y=9,labels="Planets of",adj=0,cex=3,col="red")
+text(x=-10,y=7,labels="the Solar System",adj=0,cex=3,col="red")
+```   
+
+
+### Optional Exercise
+
+Use low-level R graphics to draw a clock similar to the picture:
+
+```{r clock,echo=FALSE}
+hours <- 1:12 # the number of hours on the clock
+a <- pi/2 - (2*pi/length(hours))*hours # vector of angles, in radians
+x <- cos(a) # x coordinate on a unit circle
+y <- sin(a) # y coordinate on a unit circle
+plot.new() # create a clear plot
+plot.window(x=NULL,xlim=c(-1,1),ylim=c(-1,1),asp=1) # set the coordinate system
+plotrix::draw.circle(0,0,1,border="tomato",col="white") # draw a circle representing the face
+points (0.7*x,0.7*y,pch=16,col="blue",cex=1.5) # put the blue points on a smaller circle
+text (0.85*x,0.85*y,1:12,cex=2) # put the labels on a larger circle
+h <- 10 # set hours
+m <- 10 # set minutes
+# alternatively, get the current hour and minute:
+# h <- as.integer(format(Sys.time(),"%H"))
+# m <- as.integer(format(Sys.time(),"%M"))
+am <- pi/2 - (2*pi/60)*m # the angle of minute hand
+arrows(0,0,0.6*cos(am) ,0.6*sin(am),col="green",lwd=2,angle=20) # plot minute hand
+ah <- pi/2 - (2*pi/length(hours))*h # the angle of hour hand
+ah <- ah - (2*pi/length(hours))*m/60 # to adjust the hour hand for each minute passed
+arrows(0,0,0.4*cos(ah) ,0.4*sin(ah),col="yellow",lwd=4,angle=30) # plot hour hand
+```   
+
+You may find functions `arrows()` and `plotrix::draw.circle()` helpful.
+
+Then use functions `Sys.time()` and `format()` to show the current time in your clock.

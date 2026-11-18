@@ -1,0 +1,111 @@
+---
+title: "CD705, Week 6: Exercises"
+author: "Ben Andrews"
+---
+
+
+# Exercise 1. 
+
+The film Harry Potter and the Sorcerer's Stone broke the U.S. box office
+debut record previously held by The Lost World: Jurassic Park according to The Wall
+Street Journal, November 19, 2001.
+
+The Lost World: Jurassic Park took in $72.1 million in its first three-day weekend.
+Harry Potter and the Sorcerer's Stone was shown in 3672 cinemas. A sample of 100
+cinemas showed that the mean three-day weekend gross was $25 467 per cinema and the
+sample standard deviation was $4 980.
+
+1. Find a 95% confidence interval for the mean three-day weekend gross per cinema.
+
+2. Calculate an interval estimate of the total Harry Potter and the Sorcerer's Stone
+took in during its first three-day weekend.
+
+3. Does you result agree with the claim that Harry Potter and the Sorcerer's Stone
+broke the U.S. box office debut record?
+
+# Exercise 2. 
+
+The following are head circumferences (in centimetres) at birth of 15 infants
+(see heads.csv on My Studies):
+33.38 32.15 33.99 34.10 33.97
+34.34 33.95 33.85 34.23 32.73
+33.46 34.13 34.45 34.19 34.05
+
+Is it reasonable to conclude that the population mean head circumference is different
+from 34.2 cm?
+
+# Exercise 3. 
+
+A machine should fill sugar cartons nominally containing 1 kg, with the
+standard deviation of 0.03 kg.
+
+It was thought that the machine was overfilling the cartons, and 11 cartons of sugar
+were randomly selected from a large batch. The weights of sugar were (see sugar.csv
+on My Studies): 1.02, 1.05, 1.08, 1.03, 1.00, 1.06, 1.08, 1.01, 1.04, 1.07, 1.00 (in kg).
+
+Calculate appropriate confidence interval(s). Formulate an appropriate hypothesis
+and test it. State your conclusion.
+
+# Exercise 4. 
+
+For Exercise 19, Week 5, formulate an appropriate hypothesis, test it and
+state your conclusion.
+
+
+# Exercise 5. (cf. Exercise 2, Week 3)
+
+The manufacturer claims that the median lifetime of a component is 25 hours (that
+means that the lifetime of such a component is equally likely to be below and above 25
+hours). To verify this claim, an analyst decided to select a random sample of 20 such
+components, observe their lifetime and count X, the number of observations exceeding
+25 hours.
+
+1. The analyst decided to reject the manufacturer's claim if x ≤ 4 or x ≥ 16. Calculate
+the probability of Type I error for this procedure.
+
+2. If we want to reject if $x \leq \delta$ or $x \geq 20 - \delta$ and the required significance level is 5%,
+what value of $\delta$ should we select?
+
+3. If the manufacturer claims that the median lifetime of the component is at least 25
+hours, devise an appropriate testing procedure.
+
+
+# Exercise 6. 
+
+12 basketball players were told to shoot 25 free throws and the number of
+goals was recorded. They were then given an extensive workout and then told to shoot
+another 25 free throws; the number of goals was again recorded. The data are in the file
+basketball.sav.
+
+Does a workout affect goal scoring ability?
+
+
+# Exercise 7. 
+
+Maximum total phosphorus (mg/l) was determined in samples of water taken
+monthly from two sites in Chesapeake Bay from October to September. The results are
+in the file phosphorus.csv.
+
+Is there a significant difference in the level of maximum total phosphorus between the
+two sites?
+
+
+# Exercise 8. 
+
+As part of a study into lead pollution and its absorbance by seaweed, two
+species of fucoid seaweed, spiralis and serratus were investigated. The purpose of the
+investigation was to assess whether lead levels differ between the two species. Samples
+from 10 plants at each location were taken and assessed for levels of lead, measured as
+microgram lead to gram dry weight. The results are in the file seaweed.csv.
+
+Is there evidence of a difference between the two species in the mean lead level?
+
+# Exercise 9. 
+
+It is generally accepted that gender differences in response to heat stress do
+exist. A group of 10 men and 8 women were put through a vigorous exercise programme
+that involved the use of a treadmill. The environment was hot, and a minimal amount
+of water was available to the subjects. The variable of interest is the percentage of body
+weight lost. The obtained data are in the file heatstress.csv.
+
+Do men and women respond differently to heat stress?

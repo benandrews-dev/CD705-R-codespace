@@ -1,0 +1,536 @@
+---
+title: "CD705: Week 7 R Companion"
+author: "Alexey Chernov"
+date: "18 November 2026"
+output: html_document
+---
+
+```{r}
+set.seed(09022018) # set random seed to make the results reproducible
+```   
+
+# Multiple Comparisons Problem
+
+### Comics
+
+Look at the xkcd comics: https://xkcd.com/882/.
+Do you see the problem?
+
+### Simulations
+
+Imagine that we have several treatments and we want to decide whether they all are the same or not.
+
+We know how to compare two treatments: if the p-value given by a two-sample t-test is smaller than 
+the chosen significance level, then we declare that the two samples are drawn from distributions with different means.
+If both samples are drawn from some normal distributions, the percentage of wrongly declared differences 
+will be approximately equal to the significance level:
+```{r}
+Simulation.Repeated <- 10000 # the number of times we repeat the simulation - affects accuracy of the results
+repl <- 20 # the number of replications, n, also called the sample size
+significance <- 0.05
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); # generate two i.i.d. samples from the standard normal distribution
+
+  # check if the samples have different means according to a t-test  
+  if (t.test(x1,x2)$p.value < significance){
+    # if the p-value is smaller than the significance level, 
+    # then it is a Type I error (rejecting the null hypothesis, while it is correct)
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+If we need to compare several samples, we can try to reduce the task to pairwise comparisons:
+if there is a difference at all, then there should be (at least) one pair of different samples.
+
+Let's find the true p-value (the percentage of errors) for this methodology.
+Check whether among three samples all means are equal: 
+```{r}
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); x3 <- rnorm(repl); 
+  # generate three i.i.d. samples from the standard normal distribution
+
+  # check if any pair of the samples has different means according to a t-test  
+  if (t.test(x1,x2)$p.value < significance |
+      t.test(x1,x3)$p.value < significance |
+      t.test(x2,x3)$p.value < significance
+      ){
+    # if the p-value is smaller than the significance level in at least one of the tests, 
+    # then it is a Type I error (rejecting the null hypothesis that all means are equal, while it is correct)
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+Check whether among four samples all means are equal: 
+```{r}
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); x3 <- rnorm(repl); x4 <- rnorm(repl); 
+  # generate four i.i.d. samples from the standard normal distribution
+
+  # check if any pair of the samples has different means according to a t-test  
+  if (t.test(x1,x2)$p.value < significance |
+      t.test(x1,x3)$p.value < significance |
+      t.test(x1,x4)$p.value < significance |
+      t.test(x2,x3)$p.value < significance |
+      t.test(x2,x4)$p.value < significance |
+      t.test(x3,x4)$p.value < significance 
+      ){
+    # if the p-value is smaller than the significance level in at least one of the tests, 
+    # then it is a Type I error (rejecting the null hypothesis that all means are equal, while it is correct)
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+Check whether among five samples all means are equal: 
+```{r}
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); x3 <- rnorm(repl); x4 <- rnorm(repl); x5 <- rnorm(repl);
+  # generate five i.i.d. samples from the standard normal distribution
+
+  # check if any pair of the samples has different means according to a t-test  
+  if (t.test(x1,x2)$p.value < significance |
+      t.test(x1,x3)$p.value < significance |
+      t.test(x1,x4)$p.value < significance |
+      t.test(x1,x5)$p.value < significance |
+      t.test(x2,x3)$p.value < significance |
+      t.test(x2,x4)$p.value < significance |
+      t.test(x2,x5)$p.value < significance |
+      t.test(x3,x4)$p.value < significance |
+      t.test(x3,x5)$p.value < significance |
+      t.test(x4,x5)$p.value < significance 
+      ){
+    # if the p-value is smaller than the significance level in at least one of the tests, 
+    # then it is a Type I error (rejecting the null hypothesis that all means are equal, while it is correct)
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+For a larger number of samples, we need to perform more and more tests, but the main problem is the growth 
+of the percentage of Type I errors. The latter is sometimes called ``p-value inflation''.
+
+Do you see how this is related to the comics above?
+
+
+# ANOVA and Around
+
+First, let us repeat the simulations above using ANOVA omnibus F-test instead of pairwise comparisons:
+```{r message=FALSE,warning=FALSE}
+library(reshape2)
+```  
+
+```{r}
+Simulation.Repeated <- 1000 # ANOVA is heavier computationally, 10000 will take too long
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); # generate two i.i.d. samples from the standard normal distribution
+  data.wide <- data.frame(x1=x1,x2=x2)
+  data <- melt(data.wide,measure.vars=c("x1","x2")) # aov() needs a data frame in the long format
+  
+  # check if the samples have different means according to ANOVA F-test  
+  if (summary(aov(value ~ variable, data=data))[[1]]$`Pr(>F)`[1] < significance){
+    # if the p-value is smaller than the significance level, 
+    # then it is a Type I error (rejecting the null hypothesis, while it is correct)
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value for 2 treatments is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+```{r}
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); x3 <- rnorm(repl); 
+  data.wide <- data.frame(x1=x1,x2=x2,x3=x3)
+  data <- melt(data.wide,measure.vars=c("x1","x2","x3")) 
+
+  # Note that the syntax below does not change at all for more treatments  
+  if (summary(aov(value ~ variable, data=data))[[1]]$`Pr(>F)`[1] < significance){
+     n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value for 3 treatments is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+```{r}
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); x3 <- rnorm(repl); x4 <- rnorm(repl); 
+  data.wide <- data.frame(x1=x1,x2=x2,x3=x3,x4=x4)
+  data <- melt(data.wide,measure.vars=c("x1","x2","x3","x4")) 
+
+  if (summary(aov(value ~ variable, data=data))[[1]]$`Pr(>F)`[1] < significance){
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value for 4 treatments is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+```{r}
+n.errors <- 0 
+for(i in 1:Simulation.Repeated){
+  x1 <- rnorm(repl); x2 <- rnorm(repl); x3 <- rnorm(repl); x4 <- rnorm(repl); x5 <- rnorm(repl);
+  data.wide <- data.frame(x1=x1,x2=x2,x3=x3,x4=x4,x5=x5)
+  data <- melt(data.wide,measure.vars=c("x1","x2","x3","x4","x5")) 
+
+  if (summary(aov(value ~ variable, data=data))[[1]]$`Pr(>F)`[1] < significance){
+    n.errors <- n.errors + 1
+  }
+}
+print(paste0("The true p-value for 5 treatments is ",n.errors/Simulation.Repeated),quote=FALSE)
+```   
+
+### t- and F-distributions
+Let us look at t- and F-quantiles first:
+```{r}
+qt(0.975,10)^2 # a two-tailed 5% t-quantile squared
+qf(0.95,1,10) # a 5% F-quantile
+qf(0.95,1,10:25) # the F-quantiles decrease (making the test more powerful) as the denominator df increase
+```  
+
+## Concrete Aggregates Example
+
+An engineer is interested in how the absorption of moisture in concrete varies among five different concrete aggregates. 
+Using a completely randomised design, 6 samples are to be tested for each aggregate.
+The samples are exposed to moisture for 48 hours and the absorption of each sample is recorded 
+in file `aggregates.csv` as shown below.
+
+```{r}
+print(agg <- read.csv("aggregates.csv"))
+apply(agg,2,mean) # aggregate means
+apply(agg,2,var) # aggregate variances
+```  
+
+### t-test 
+We can compare aggregates 1 and 4 and then 2 and 4 using just t-tests and ignoring other observations:
+```{r}
+t.test(agg$AG1,agg$AG4,var.equal=TRUE)
+t.test(agg$AG1,agg$AG4,var.equal=FALSE)
+t.test(agg$AG2,agg$AG4,var.equal=TRUE)
+t.test(agg$AG2,agg$AG4,var.equal=FALSE)
+```  
+
+### Long Format Transformation
+```{r, fig.align='center'}
+agg$rep <- 1:nrow(agg) # creating a case ID variable
+print(agg.long <- melt(agg,id.vars="rep",variable.name="Aggregate",value.name="Absorption"))
+agg.long$Aggregate <- factor(agg.long$Aggregate)
+barplot(tapply(agg.long$Absorption,agg.long$Aggregate,mean),xlab="Aggregate",ylab="Absoprtion")
+levels(agg.long$Aggregate) # check what treatments we have
+replications(Absorption~Aggregate,data=agg.long) # get the number of replications and check that the design is balanced
+```  
+
+### ANOVA omnibus F-test
+
+There are many functions for performing ANOVA analysis is R. 
+The function `aov()` below is suitable for balanced designs only. 
+```{r}
+agg.model <- aov(Absorption~Aggregate,data=agg.long)
+summary(agg.model)
+```  
+Here we are given the sum of squares for treatment \(85984\), 
+the sum of squares for error \(88770\),
+their respective degrees of freedom (\(4 = 5-1\) and \(25 = 5(6-1)\)),
+the mean SSs, the value of the test statistics \(\tilde F = 6.054\)
+and p-value \(0.0015\). 
+We can confidently reject the null hypothesis that the absorption of moisture 
+is the same for all five concrete aggregates.
+
+# ANOVA assumptions
+
+The examples below are just examples. You are encouraged to run the code on your own with different random seed 
+to get more examples of possible plots etc.
+
+```{r, warning=FALSE}
+library(car)
+repl <- 20 # the number of replications
+n.trt <- 4 # the number of treatments (factor levels)
+```   
+We will consider a model where there are `r n.trt` treatments and the true treatment means are 
+`r paste(1:n.trt,collapse=",")`, that is, the model is \(Y_{ij}= i + \varepsilon_{ij}\).
+
+### Independent errors from the standard normal distribution
+
+The errors are \(\varepsilon_{ij}\sim\mathcal{N}(0,1)\).
+
+```{r}
+data <- data.frame(Response=rep(1:n.trt,each=repl) + rnorm(repl*n.trt),Treatment=factor(rep(1:n.trt,each=repl)))
+```   
+The `data` contains the "observed" `Response` for each `Treatment`, with `r repl` replications.
+```{r, fig.align='center',fig.width=10}
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+plot(data.model$residuals,main="Residuals vs Order")
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+The omnibus ANOVA F-test finds the difference very confidently.
+All plots and tests are fine.
+
+Note that we do not normally use a Residuals vs Order plot as in our examples the experiments are ordered 
+by treatments and not in their actual order of experimentation. 
+You should not use this plot for real-life experiments.
+
+### Independent normal errors with different variances
+
+The variance of errors depends on the treatment: \(\varepsilon_{ij}\sim\mathcal{N}(0,i^2)\).
+```{r, fig.align='center',fig.width=10}
+data <- data.frame(
+    Response=rep(1:n.trt,each=repl) + rnorm(repl*n.trt,sd=rep(1:n.trt,each=repl)),
+    Treatment=factor(rep(1:n.trt,each=repl))
+  )
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+Note that the unequal variances affected the Q-Q plot and the normality test as well, 
+not only the directly involved Residuals vs Fitted Values and vs Treatments plots and
+the homogeneity test.
+
+Repeat for the same model of errors, just to see what may change for different random numbers:
+```{r, fig.align='center',fig.width=10}
+data <- data.frame(
+    Response=rep(1:n.trt,each=repl) + rnorm(repl*n.trt,sd=rep(1:n.trt,each=repl)),
+    Treatment=factor(rep(1:n.trt,each=repl))
+  )
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+
+
+### Independent identically distributed non-normal errors
+
+First, try the uniform distribution on \([-1,1]\): \(\varepsilon_{ij}\sim U([-1,1])\).
+```{r, fig.align='center',fig.width=10}
+data <- data.frame(
+    Response=rep(1:n.trt,each=repl) + runif(repl*n.trt,min=-1,max=1),
+    Treatment=factor(rep(1:n.trt,each=repl))
+  )
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+The deviation from normality is detected, and that is all.
+
+
+Second, let's look at a mixture of normal distributions \(\mathcal{N}(-2,1)\) and \(\mathcal{N}(2,2)\).
+We will use an "honest" generation method: for each observation we randomly select one of the distribution
+and then generate an error from this distribution
+```{r, fig.align='center',fig.width=10}
+DI<-sample.int(2,repl*n.trt,replace=TRUE) # the array of indices: which distribution is used for each observation 
+data <- data.frame(
+    Response=rep(1:n.trt,each=repl) + rnorm(repl*n.trt,mean=c(-2,2)[DI],sd=c(1,2)[DI]),
+    Treatment=factor(rep(1:n.trt,each=repl))
+  )
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+Again, the deviation from normality is the only visible feature.
+
+
+### Non-independent normal errors with variance \(1\)
+
+First, consider a random walk model, 
+where the expectation of the next error is equal to the current error: 
+\(\varepsilon_{1}\sim\mathcal{N}(0,1)\) and 
+\(\varepsilon_{k+1}\sim\mathcal{N}(\varepsilon_{k},1)\),
+where \(k\) is the experiment number.
+This is a typical problem in experiments, which may occur if the same conditions are not restored before each experiment
+(cleaning, re-adjusting scales, etc.).
+As the errors now have an order, we cannot ignore the correct order of experiments any more,
+so the order of treatments is randomised as well.
+
+It is easy to see from the properties of normal RVs that the errors as above 
+can be modelled by 
+\(\varepsilon_{k}=\delta_{k}+\sum_{l=1}^{k-1}\delta_{l},\: \delta_{k}\sim\mathcal{N}(0,1)\)
+```{r, fig.align='center',fig.width=10}
+trt.order <- sample(rep(1:n.trt,each=repl)) # the order of treatments
+data <- data.frame(
+    Response=trt.order + cumsum(rnorm(repl*n.trt)),
+    Treatment=factor(trt.order)
+  )
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+plot(data.model$residuals,main="Residuals vs Order")
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+The non-independence affects the Q-Q plot, but is mostly visible on the Residuals vs Order plot.
+
+
+Now consider another model, more complicated,
+where the next error is affected by the average of all previous errors
+and the errors are dependent within each treatment only (this may happen 
+if the treatments are somehow affected by each application,
+for example, the "treatments" are human beings).
+The model is 
+where the expectation of the next error is equal to the current error: 
+\(\varepsilon_{i1}\sim\mathcal{N}(0,1)\) and 
+\(\varepsilon_{ij+1}\sim\mathcal{N}(\frac1j\sum_{l=1}^j\varepsilon_{il},1)\).
+
+This model can be simulated by a for-loop,
+but it is possible to obtain the following equivalent representation: 
+\(\varepsilon_{ij}=\delta_{ij}+\sum_{l=1}^{j-1}\frac1l\delta_{il},\: \delta_{il}\sim\mathcal{N}(0,1)\)
+(one can prove by induction that this is the same as above).
+```{r, fig.align='center',fig.width=10}
+trt.order <- sample(rep(1:n.trt,each=repl)) # the order of treatments
+errors.array <- sapply(1:n.trt,function(i){x<-rnorm(repl);x+cumsum(x/seq_along(x))}) 
+# errors.array contains the errors for each treatment
+errors <- 1:(repl*n.trt)
+# the next line assigns errors in the order of treatments
+lapply(1:n.trt,function(i){errors[trt.order==i]<<-errors.array[,i]}) -> unused.value 
+data <- data.frame(Response=trt.order+errors,Treatment=factor(trt.order))
+summary(data.model <- aov(Response~Treatment,data=data))
+plot(data.model,which=c(1,2,5),add.smooth=FALSE)
+plot(data.model$residuals,main="Residuals vs Order")
+leveneTest(data.model)
+shapiro.test(data.model$residuals)
+```   
+The most visible deviation is in the Residuals vs Fitted plot. 
+Generally, violations of independence are very difficult to detect. 
+This assumption must be provided by an appropriate design and conduct of experiments.
+
+# Assumptions checking
+
+We have three assumptions about the errors to check:
+
+* independence
+* homogeneity (equality) of variance
+* normality
+
+We do not have access to the true errors, so we use our model estimates to 
+get residuals (the differences between the observations and the estimated treatment means)
+and apply test to the residuals.
+
+### Graphical tools
+
+There are test for homogeneity of variance and normality assumptions. 
+However, they have their own assumptions as well. 
+Thus it is very important to use plots and assess whether there are any suspicious patterns.
+
+```{r, fig.align='center',fig.width=10}
+plot(agg.model,which=c(1,5),add.smooth=FALSE) # residuals vs fitted and vs treatments
+plot(agg.model,which=2,add.smooth=FALSE) # Q-Q plot
+```  
+No visible patterns in any of the plots, hence we can proceed to the tests.
+
+### Tests for homogeneity of variance
+
+They are also called tests for constant variance or for equality of variances.
+```{r}
+bartlett.test(Absorption~Aggregate,data=agg.long)
+leveneTest(Absorption~Aggregate,data=agg.long) # Brown-Forsythe test for the equality of variances
+leveneTest(Absorption~Aggregate,data=agg.long,center=mean) # Levene's test for the equality of variances
+leveneTest(Absorption~Aggregate,data=agg.long,center=mean,trim=0.1)
+```   
+
+Warning: there is another Brown-Forsythe test, for the equality of means, and 
+it is the other test that is implemented in SPSS under this name. Beware!
+```{r}
+onewaytests::bf.test(Absorption~Aggregate,data=agg.long) # Brown-Forsythe test for the equality of means
+```   
+
+### Tests for normality
+
+```{r}
+shapiro.test(agg.model$residuals) # Shapiro-Wilk test
+nortest::lillie.test(agg.model$residuals) # Kolmogorov-Smirnov / Lilliefors test
+nortest::ad.test(agg.model$residuals) #  Anderson-Darling test
+nortest::cvm.test(agg.model$residuals) #  Cramer-von Mises test
+```  
+
+## Assumptions violations
+
+If we have found that assumptions are not met, 
+we may still use ANOVA results, especially if the p-values are very small,
+but with caution.
+
+Alternative solutions are:
+
+* use "non-parametric" tests (which have their own assumptions)
+* transform the data (will be discussed later in application to linear regression)
+* change the structure of the imposed model
+* exclude some observations (outliers) or treatments
+
+Let's consider the last two possibilities. 
+
+### Treatments removal
+
+A study of exposure to radiation in the home
+used four different types of devices to measure the radiation levels: 
+filter, membrane, open cup, and badge. 
+Twenty devices of each type were placed in a chamber and subjected to constant radiation. 
+The amount of radiation measured by each device was recorded.
+
+```{r, fig.width=10,fig.align='center'}
+radon<-melt(read.table("radon.csv",header=TRUE,sep=","))
+names(radon)<-c("Device","Radiation")
+summary(radon.model<-aov(Radiation~Device,data=radon))
+plot(radon.model,which=c(1,2,5),add.smooth=FALSE)
+bartlett.test(Radiation~Device,data=radon)
+shapiro.test(radon.model$residuals)
+```   
+The equality of variances assumption is definitely violated.
+
+Let's remove one unusual device:
+```{r, fig.width=10,fig.align='center'}
+summary(radon.model.reduced<-aov(Radiation~Device,data=radon[radon$Device!="Membrane",]))
+plot(radon.model.reduced,which=c(1,2,5),add.smooth=FALSE)
+bartlett.test(Radiation~Device,data=radon[radon$Device!="Membrane",])
+shapiro.test(radon.model.reduced$residuals)
+nortest::lillie.test(radon.model.reduced$residuals) 
+```
+
+Now the variances are fine, but it seems that the normality assumption is not met. 
+However, the deviation from normality on the Q-Q plot is reasonably limited and 
+the p-value of the ANOVA omnibus F-test is sufficiently close to zero to accept that 
+there is a difference between treatment means indeed.
+
+
+# Model estimates in R
+
+We consider ANOVA model in the form \(Y_{ij} = \mu_i + \varepsilon_{ij}\). 
+So far we discussed how to assess whether \(\mu_i\) are different. 
+Another task is estimate \(\mu_i\) (and find confidence intervals etc. for them).
+The ANOVA estimates for \(\mu_i\) is just the average of observations 
+for the respective treatment:
+\(\hat\mu_i = \frac{1}{n}\sum_{j=1}^n Y_{ij}\).
+In R, these estimates can be computed as follows:
+```{r}
+tapply(agg.long$Absorption,agg.long$Aggregate,mean)
+```   
+and also using the following unnecessary advanced tools:
+```{r}
+coef(aov(Absorption~Aggregate+0,data=agg.long))
+```   
+
+However, the same model can be written in several forms, each convenient 
+in some situations. 
+The model above is called the means model. 
+
+
+# Addendum: A non-parametric alternative test
+
+An alternative to ANOVA omnibus \(F\)-test is Kruskal-Wallis test.
+It does not require normality but does need the i.i.d. assumption.
+Typically, the test is less powerful than ANOVA omnibus \(F\)-test,
+and it is trickier to assess its assumptions.
+```{r}
+kruskal.test(Absorption~Aggregate,data=agg.long)
+```   

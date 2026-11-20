@@ -12,3 +12,4 @@ data/*csv
 data/*zip
 CD705-R/Research/Bike_Rentals/data/*csv
 CD705-R/Research/Bike_Rentals/data/*/*csv
+*log

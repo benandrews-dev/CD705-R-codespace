@@ -3,17 +3,54 @@
 # URL for the bike rentals data: https://divvy-tripdata.s3.amazonaws.com/index.html
 
 ```{r}
+source("/workspaces/CD705-R/CD705-R/Research/Bike_Rentals/divvy_utils.r")
+logger <- get_logger()
+```
+
+```{r}
+# Write a test message to the logger
+log_info("This is a test message.")
+```
+
+```{r}
+download_and_unzip_data_file <- function(filename, dest_dir, tmp_zip_file) {
+  log_info("Downloading and unzipping data file:", filename)
+  # Download the bike rentals data file
+  download.file(paste0("https://divvy-tripdata.s3.amazonaws.com/", filename, ".zip"), destfile = tmp_zip_file, mode = "wb")
+  unzip(tmp_zip_file, exdir = dest_dir)
+  file.remove(tmp_zip_file)
+}
+
 prepare_data_files <- function() {
   # Create a directory to store the data files
   dest_dir <- "CD705-R/Research/Bike_Rentals/data"
   dir.create(dest_dir, showWarnings = FALSE)
-
   tmp_zip_file <- paste0(dest_dir, "/bike_rentals.zip")
 
-  # Download the bike rentals data file
-  download.file("https://divvy-tripdata.s3.amazonaws.com/202004-divvy-tripdata.zip", destfile = tmp_zip_file, mode = "wb")
-  unzip(tmp_zip_file, exdir = dest_dir)
-  file.remove(tmp_zip_file)
+  root_filenames <- c(
+    "202004-divvy-tripdata"
+    , "202005-divvy-tripdata"
+    , "202006-divvy-tripdata"
+    , "202007-divvy-tripdata"
+    , "202008-divvy-tripdata"
+    , "202009-divvy-tripdata"
+    , "202010-divvy-tripdata"
+    , "202011-divvy-tripdata"
+    , "202012-divvy-tripdata"
+    , "202101-divvy-tripdata"
+    , "202102-divvy-tripdata"
+    , "202103-divvy-tripdata"
+    )
+  for (filename in root_filenames) {
+    csv_file_path <- paste0(dest_dir, "/", filename, ".csv")
+    if (file.exists(csv_file_path)) {
+      log_info("File already exists:", csv_file_path)
+    } else {
+      log_info("File does not exist, downloading:", csv_file_path)
+      # Download the bike rentals data file
+      download_and_unzip_data_file(filename, dest_dir, tmp_zip_file)
+    }
+  }
 }
 
 prepare_data_files()
@@ -22,19 +59,88 @@ prepare_data_files()
 ```{r}
 
 # Read the bike rentals data into a data frame
-bike_rentals <- read.csv("CD705-R/Research/Bike_Rentals/data/202004-divvy-tripdata.csv")
+data_files <- list.files("CD705-R/Research/Bike_Rentals/data", pattern = "*.csv", full.names = TRUE)
+bike_rentals <- do.call(rbind, lapply(data_files, read.csv))
 
-# Display the first few rows of the data frame
-head(bike_rentals)
+# Read the bike rentals data into a data frame
+#bike_rentals <- read.csv("CD705-R/Research/Bike_Rentals/data/202004-divvy-tripdata.csv")
 
-# Store the GPS coordinates of the bike stations in a separate data frame
-bike_stations <- unique(bike_rentals[, c("start_station_name", "start_lat", "start_lng")])
-colnames(bike_stations) <- c("station_name", "latitude", "longitude")
+bike_rentals$started_at <- as.POSIXct(bike_rentals$started_at, format = "%Y-%m-%d %H:%M:%S")
+bike_rentals$ended_at <- as.POSIXct(bike_rentals$ended_at, format = "%Y-%m-%d %H:%M:%S")
 
-# Make a map of the bike stations using the leaflet package
-library(leaflet)
-leaflet(data = bike_stations) %>%
-  addTiles() %>%
-  addCircleMarkers(~longitude, ~latitude, popup = ~station_name, radius = 5, color = "blue", fillOpacity = 0.7)
+# Get a list of days for which we have data
+dates <- sort(unique(as.Date(bike_rentals$started_at)))
 
+data_by_day <- data.frame()
+for (date in dates) {
+  log_info("Processing data for date:", date)
+  calendar_date <- as.Date(date)
+  day_of_week <- weekdays(calendar_date)
+  
+  day_data <- subset(bike_rentals, as.Date(started_at) == calendar_date)
+  hours <- sort(unique(format(day_data$started_at, "%H")))
+
+  data_by_hour <- data.frame()
+  for (hour in hours) {
+    hour_data_starts <- subset(day_data, format(started_at, "%H") == hour)
+    hour_data_ends <- subset(day_data, format(ended_at, "%H") == hour)
+    data_by_day <- rbind(data_by_day, data.frame(date = calendar_date, day_of_week = day_of_week, hour = hour, trips_starting = nrow(hour_data_starts), trips_ending = nrow(hour_data_ends)))
+  }
+}
+```
+
+```{r}
+# For each day, calculate the total number of trips starting and ending
+daily_summary <- aggregate(cbind(trips_starting, trips_ending) ~ date + day_of_week, data = data_by_day, FUN = sum)
+
+# Plot the total number of trips starting and ending for each day
+library(ggplot2)
+ggplot(daily_summary, aes(x = date)) +
+  geom_line(aes(y = trips_starting), color = "blue", linetype = "solid") +
+  geom_line(aes(y = trips_ending), color = "red", linetype = "solid") +
+  labs(title = "Bike Rentals by Day", x = "Date", y = "Number of Trips") +
+  theme_minimal()
+```
+
+```{r}
+# For each hour, plot error bars for the number of trips starting and ending
+hourly_summary <- aggregate(cbind(trips_starting, trips_ending) ~ hour, data = data_by_day, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+
+error_bar_mins <- hourly_summary$trips_starting[, "mean"] - hourly_summary$trips_starting[, "sd"]
+error_bar_maxs <- hourly_summary$trips_starting[, "mean"] + hourly_summary$trips_starting[, "sd"]
+means <- hourly_summary$trips_starting[, "mean"]
+
+ggplot(hourly_summary, aes(x = hour)) +
+  geom_errorbar(aes(ymin = error_bar_mins, ymax = error_bar_maxs), width = 0.5) +
+  geom_point(aes(y = means), size = 2) +
+  labs(title = "Bike Rentals by Hour", x = "Hour", y = "Number of Trips") +
+  theme_minimal()
+```
+
+```{r}
+# Make a 3d plot of the number of trips starting and ending for each day and hour
+library(plotly)
+hourly_summary_3d <- aggregate(cbind(trips_starting, trips_ending) ~ date + hour, data = data_by_day, FUN = sum)
+fig <- plot_ly(hourly_summary_3d, x = ~date, y = ~hour, z = ~trips_starting, type = "scatter3d", mode = "markers", name = "Trips Starting") %>%
+  add_trace(z = ~trips_ending, name = "Trips Ending") %>%
+  layout(title = "Bike Rentals by Day and Hour", scene = list(xaxis = list(title = "Date"), yaxis = list(title = "Hour"), zaxis = list(title = "Number of Trips")))
+fig
+```
+
+```{r}
+# Make a 3d plot of the number of trips starting and ending for each day and hour
+# Averaged by day of the week
+
+data_by_day_of_week <- aggregate(cbind(trips_starting, trips_ending) ~ day_of_week + hour, data = data_by_day, FUN = mean)
+
+# Order the graph by days of the week
+data_by_day_of_week$day_of_week <- factor(data_by_day_of_week$day_of_week, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# Order data_by_day_of_week by day_of_week
+data_by_day_of_week <- data_by_day_of_week[order(data_by_day_of_week$day_of_week), ]
+
+library(plotly)
+fig <- plot_ly(data_by_day_of_week, x = ~day_of_week, y = ~hour, z = ~trips_starting, type = "scatter3d", mode = "markers", name = "Trips Starting") %>%
+  layout(title = "Bike Rentals by Day and Hour", scene = list(xaxis = list(title = "Day of Week"), yaxis = list(title = "Hour"), zaxis = list(title = "Number of Trips")))
+fig
 ```
